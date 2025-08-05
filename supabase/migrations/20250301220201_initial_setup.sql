@@ -23,7 +23,7 @@ $$
 LANGUAGE plpgsql
 volatile
 SECURITY INVOKER
-SET search_path = 'public';
+SET search_path = '';
 
 -- Create table locales
 CREATE TABLE locales (
@@ -44,14 +44,14 @@ DECLARE
     value regconfig;
 BEGIN
     SELECT tsconfig_name::regconfig INTO value
-    FROM locales
+    FROM public.locales
     WHERE id = locale_id;
 
     RETURN value;
 END;
 $$
 SECURITY INVOKER
-SET search_path = 'public'
+SET search_path = ''
 ;
 
 -- Create table taxonomies
@@ -257,14 +257,14 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         -- Increment favorite count
-        UPDATE prompts 
+        UPDATE public.prompts 
         SET count_favorite = count_favorite + 1,
             updated_at = NOW()
         WHERE id = NEW.prompt_id;
         RETURN NEW;
     ELSIF TG_OP = 'DELETE' THEN
         -- Decrement favorite count
-        UPDATE prompts 
+        UPDATE public.prompts 
         SET count_favorite = count_favorite - 1,
             updated_at = NOW()
         WHERE id = OLD.prompt_id;
@@ -272,7 +272,10 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+volatile
+SECURITY INVOKER
+SET search_path = '';
 
 -- Function to update reaction counts when user_prompt_reactions changes
 CREATE OR REPLACE FUNCTION update_prompt_reaction_count()
@@ -281,12 +284,12 @@ BEGIN
     IF TG_OP = 'INSERT' THEN
         -- Increment reaction count based on type
         IF NEW.reaction_type = 'up' THEN
-            UPDATE prompts 
+            UPDATE public.prompts 
             SET count_reaction_up = count_reaction_up + 1,
                 updated_at = NOW()
             WHERE id = NEW.prompt_id;
         ELSIF NEW.reaction_type = 'down' THEN
-            UPDATE prompts 
+            UPDATE public.prompts 
             SET count_reaction_down = count_reaction_down + 1,
                 updated_at = NOW()
             WHERE id = NEW.prompt_id;
@@ -295,12 +298,12 @@ BEGIN
     ELSIF TG_OP = 'DELETE' THEN
         -- Decrement reaction count based on type
         IF OLD.reaction_type = 'up' THEN
-            UPDATE prompts 
+            UPDATE public.prompts 
             SET count_reaction_up = count_reaction_up - 1,
                 updated_at = NOW()
             WHERE id = OLD.prompt_id;
         ELSIF OLD.reaction_type = 'down' THEN
-            UPDATE prompts 
+            UPDATE public.prompts 
             SET count_reaction_down = count_reaction_down - 1,
                 updated_at = NOW()
             WHERE id = OLD.prompt_id;
@@ -311,23 +314,23 @@ BEGIN
         IF OLD.reaction_type != NEW.reaction_type THEN
             -- Decrement old reaction type
             IF OLD.reaction_type = 'up' THEN
-                UPDATE prompts 
+                UPDATE public.prompts 
                 SET count_reaction_up = count_reaction_up - 1
                 WHERE id = OLD.prompt_id;
             ELSIF OLD.reaction_type = 'down' THEN
-                UPDATE prompts 
+                UPDATE public.prompts 
                 SET count_reaction_down = count_reaction_down - 1
                 WHERE id = OLD.prompt_id;
             END IF;
             
             -- Increment new reaction type
             IF NEW.reaction_type = 'up' THEN
-                UPDATE prompts 
+                UPDATE public.prompts 
                 SET count_reaction_up = count_reaction_up + 1,
                     updated_at = NOW()
                 WHERE id = NEW.prompt_id;
             ELSIF NEW.reaction_type = 'down' THEN
-                UPDATE prompts 
+                UPDATE public.prompts 
                 SET count_reaction_down = count_reaction_down + 1,
                     updated_at = NOW()
                 WHERE id = NEW.prompt_id;
@@ -337,7 +340,10 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+volatile
+SECURITY INVOKER
+SET search_path = '';
 
 -- =====================================================
 -- TRIGGERS
