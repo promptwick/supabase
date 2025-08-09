@@ -1,48 +1,48 @@
-import joi from "./joi.ts";
+import Joi from 'npm:joi';
 
-export interface TaxonomyGetParams {
-    taxonomyId: string;
-}
+export type TaxonomyGetParams = {
+	taxonomyId: string;
+};
 
-export interface TaxonomyPostBody {
-    name: string;
-}
+export type TaxonomyPostBody = {
+	name: string;
+};
 
-export interface TaxonomyPatchBody {
-    name: string;
-}
+export type TaxonomyPatchBody = {
+	name: string;
+};
 
-export interface TaxonomyPatchParams {
-    taxonomyId: string;
-}
+export type TaxonomyPatchParams = {
+	taxonomyId: string;
+};
 
-export interface TaxonomyDeleteParams {
-    taxonomyId: string;
-}
+export type TaxonomyDeleteParams = {
+	taxonomyId: string;
+};
 
-export const taxonomyGetSchema = joi.object({
-    params: joi.object({
-        taxonomyId: joi.string().pattern(/^[0-9]+$/).required(),
-    }).required(),
+export const taxonomyGetSchema = Joi.object({
+	params: Joi.object({
+		taxonomyId: Joi.string().pattern(/^[0-9]+$/).required(),
+	}).required(),
 });
 
-export const taxonomyPostSchema = joi.object({
-    body: joi.object({
-        name: joi.string().required(),
-    }).required(),
+export const taxonomyPostSchema = Joi.object({
+	body: Joi.object({
+		name: Joi.string().required(),
+	}).required(),
 });
 
-export const taxonomyPatchSchema = joi.object({
-    body: joi.object({
-        name: joi.string().required(),
-    }).required(),
-    params: joi.object({
-        taxonomyId: joi.string().pattern(/^[0-9]+$/).required(),
-    }).required(),
+export const taxonomyPatchSchema = Joi.object({
+	body: Joi.object({
+		name: Joi.string().required(),
+	}).required(),
+	params: Joi.object({
+		taxonomyId: Joi.string().pattern(/^[0-9]+$/).required(),
+	}).required(),
 });
 
-export const taxonomyDeleteSchema = joi.object({
-    params: joi.object({
-        taxonomyId: joi.string().pattern(/^[0-9]+$/).required(),
-    }).required(),
+export const taxonomyDeleteSchema = Joi.object({
+	params: Joi.object({
+		taxonomyId: Joi.string().pattern(/^[0-9]+$/).required(),
+	}).required(),
 });

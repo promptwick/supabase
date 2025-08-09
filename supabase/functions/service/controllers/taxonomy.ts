@@ -1,6 +1,6 @@
 import { Context } from "jsr:@hono/hono";
 import { StatusCodes } from "npm:http-status-codes";
-import { v4 as uuid } from "npm:uuid";
+import { v7 as uuid } from "npm:uuid";
 import Database from "../models/database.ts";
 import Taxonomy from "../models/taxonomys.ts";
 import {

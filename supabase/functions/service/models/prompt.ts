@@ -1,32 +1,45 @@
-import BaseEntity, { HasDefault, PrimaryKey } from "./base_entity.ts";
+import BaseEntity, { HasDefault, PrimaryKey } from './base_entity.ts';
 
 class Prompt extends BaseEntity {
-  @HasDefault()
-  @PrimaryKey()
-  id!: string;
+	@HasDefault()
+	@PrimaryKey()
+	id!: string;
 
-  createdBy!: string;
+	@HasDefault()
+	countFavorite!: number;
 
-  updatedBy!: string;
+	@HasDefault()
+	countReactionDown!: number;
 
-  @HasDefault()
-  createdAt!: Date;
+	@HasDefault()
+	countReactionUp!: number;
 
-  @HasDefault()
-  updatedAt!: Date;
+	createdBy!: string;
 
-  @HasDefault()
-  version!: number;
+	@HasDefault()
+	createdAt!: Date;
 
-  name!: string;
+	@HasDefault()
+	isLatestVersion!: boolean;
 
-  @HasDefault()
-  isPublic!: boolean;
+	@HasDefault()
+	isPublic!: boolean;
 
-  @HasDefault()
-  isLatestVersion!: boolean;
+	localeId!: string;
 
-  parentPromptId!: string | null;
+	name!: string;
+
+	parentPromptId!: string | null;
+
+	prompt!: string;
+
+	@HasDefault()
+	updatedAt!: Date;
+
+	updatedBy!: string;
+
+	@HasDefault()
+	version!: number;
 }
 
 export default Prompt;

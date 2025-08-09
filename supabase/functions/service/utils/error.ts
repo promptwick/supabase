@@ -10,12 +10,10 @@ export class ApiError extends HTTPException {
   constructor(
     status: number,
     message: string,
-    reason?: string,
     details?: Record<string, unknown>
   ) {
     super(status as 400 | 401 | 403 | 404 | 500, { message });
     this.name = "ApiError";
-    this.reason = reason;
     this.details = details;
   }
 }
@@ -24,7 +22,6 @@ export const createErrorResponse = (
   c: Context,
   status: number,
   message: string,
-  reason?: string,
   details?: Record<string, unknown>
 ): ErrorResponse => {
   return {
@@ -32,7 +29,6 @@ export const createErrorResponse = (
       code: status,
       status: getReasonPhrase(status),
       message,
-      reason,
       details,
       timestamp: new Date().toISOString(),
       path: c.req.path,
@@ -44,8 +40,7 @@ export const createErrorResponse = (
 export function throwApiError(
   status: number,
   message: string,
-  reason?: string,
   details?: Record<string, unknown>
 ): never {
-  throw new ApiError(status, message, reason, details);
+  throw new ApiError(status, message, details);
 }

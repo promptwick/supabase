@@ -1,5 +1,6 @@
 import { snakeCase } from "https://deno.land/x/case@2.2.0/mod.ts";
-import { Pool, Transaction } from "https://deno.land/x/postgres@v0.19.3/mod.ts";
+import { Pool, QueryArguments, Transaction } from "jsr:@db/postgres";
+
 
 import logger from "../utils/logger.ts";
 
@@ -14,9 +15,9 @@ const log = logger.child({ namespace: "models.database" });
 export default class Database {
   static #instance: Database;
 
+  declare debug: boolean;
   declare dsn: string;
   declare pool: Pool;
-  declare debug: boolean;
 
   constructor(debug = false) {
     this.debug = debug;
@@ -202,7 +203,7 @@ export default class Database {
 
   public async query<T extends BaseEntity>(
     query: string,
-    values: unknown[] = [],
+    values: QueryArguments = [],
     transaction: Transaction | null = null,
   ): Promise<T[]> {
     log.debug(`Executing query: ${query} with values %o`, values);
@@ -230,7 +231,7 @@ export default class Database {
 
   public async queryOne<T extends BaseEntity>(
     query: string,
-    values: unknown[] = [],
+    values: QueryArguments = [],
     transaction: Transaction | null = null,
   ): Promise<T | null> {
     const result = await this.query<T>(query, values, transaction);
@@ -240,7 +241,7 @@ export default class Database {
     return null;
   }
 
-  public async queryRaw(query: string, values: unknown[]): Promise<unknown[]> {
+  public async queryRaw(query: string, values: QueryArguments): Promise<unknown[]> {
     log.debug(`Executing raw query: ${query} with values %o`, values);
 
     let conn;
@@ -259,7 +260,7 @@ export default class Database {
     }
   }
 
-  public async queryRawRow(query: string, values: unknown[]): Promise<unknown> {
+  public async queryRawRow(query: string, values: QueryArguments): Promise<unknown> {
     const result = await this.queryRaw(query, values);
     if (result.length > 0) {
       return result[0];
@@ -269,7 +270,7 @@ export default class Database {
 
   public async queryRawCell(
     query: string,
-    values: unknown[],
+    values: QueryArguments,
   ): Promise<unknown> {
     const result = await this.queryRawRow(query, values) as object;
     if (result) {

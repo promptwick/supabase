@@ -2,20 +2,20 @@ import BaseEntity, { HasDefault } from "./base_entity.ts";
 
 class Term extends BaseEntity {
   @HasDefault()
-  id!: string;
-
-  taxonomyId!: string;
-
-  name!: string;
+  createdAt!: Date;
 
   description!: string;
 
-  parentTermId!: string | null;
+  @HasDefault()
+  id!: string;
 
   localeId!: string;
 
-  @HasDefault()
-  createdAt!: Date;
+  name!: string;
+
+  parentTermId!: string | null;
+
+  taxonomyId!: string;
 
   @HasDefault()
   updatedAt!: Date;
