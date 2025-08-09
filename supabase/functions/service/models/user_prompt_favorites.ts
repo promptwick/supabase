@@ -1,6 +1,6 @@
 import BaseEntity, { HasDefault, PrimaryKey } from "./base_entity.ts";
 
-class UserFavoritePrompt extends BaseEntity {
+class UserPromptFavorite extends BaseEntity {
   @PrimaryKey()
   userId!: string;
 
@@ -11,4 +11,4 @@ class UserFavoritePrompt extends BaseEntity {
   createdAt!: Date;
 }
 
-export default UserFavoritePrompt;
+export default UserPromptFavorite;

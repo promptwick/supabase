@@ -1,17 +1,15 @@
 import { Context } from 'jsr:@hono/hono';
+import { QueryArguments } from 'jsr:@db/postgres';
 
 import { StatusCodes } from 'npm:http-status-codes';
 import { v7 as uuid } from 'npm:uuid';
 
 import Database from '../models/database.ts';
 import Prompt from '../models/prompt.ts';
-import Term from '../models/terms.ts';
 import PromptTerm from '../models/prompt_terms.ts';
+import Term from '../models/terms.ts';
 import { PromptDeleteParams, PromptGetAllQuery, PromptGetParams, PromptPatchBody, PromptPatchParams, PromptPostBody } from '../schemas/prompts.ts';
-import PromptSearch from '../models/prompt_search.ts';
-import { saveAlgolia } from '../services/algolia.ts';
 import { throwApiError } from '../utils/error.ts';
-import { QueryArguments } from 'jsr:@db/postgres';
 
 /**
  * Retrieves a prompt by its ID from the database and returns it as a JSON response.
