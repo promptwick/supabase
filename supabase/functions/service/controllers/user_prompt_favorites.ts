@@ -1,7 +1,7 @@
 import { StatusCodes } from 'npm:http-status-codes';
 import Database from '../models/database.ts';
-import UserFavoritePrompt from '../models/user_prompt_favorites.ts';
-import { UserPromptFavoriteDeleteParams, UserPromptFavoritePostBody } from '../schemas/user_prompt_favorite.ts';
+import UserPromptFavorite from '../models/user_prompt_favorites.ts';
+import { UserPromptFavoriteDeleteParams, UserPromptFavoritePostBody } from '../schemas/user_prompt_favorites.ts';
 import { Context } from 'jsr:@hono/hono';
 import { throwApiError } from '../utils/error.ts';
 
@@ -16,7 +16,7 @@ import { throwApiError } from '../utils/error.ts';
  * @returns A JSON response indicating success with HTTP status 201 (Created).
  * @throws {ApiError} If the user has already favorited the prompt (HTTP 409 Conflict) or on other database errors.
  */
-const createUserFavoritePrompt = async (c: Context) => {
+const createUserPromptFavorite = async (c: Context) => {
 	const { promptId } = await c.req.json<
 		UserPromptFavoritePostBody
 	>();
@@ -26,12 +26,12 @@ const createUserFavoritePrompt = async (c: Context) => {
 	const db = Database.instance;
 
 	try {
-		const newUserFavoritePrompt = new UserFavoritePrompt();
-		newUserFavoritePrompt.userId = user.id;
-		newUserFavoritePrompt.promptId = promptId;
-		newUserFavoritePrompt.createdAt = new Date();
+		const newUserPromptFavorite = new UserPromptFavorite();
+		newUserPromptFavorite.userId = user.id;
+		newUserPromptFavorite.promptId = promptId;
+		newUserPromptFavorite.createdAt = new Date();
 
-		await db.insert('user_favorite_prompts', newUserFavoritePrompt);
+		await db.insert('user_favorite_prompts', newUserPromptFavorite);
 	} catch (ex) {
 		console.error('Error creating user favorite prompt:', ex);
 		// Check for unique constraint violation (Postgres error code 23505)
@@ -58,7 +58,7 @@ const createUserFavoritePrompt = async (c: Context) => {
  * @throws {ApiError} If the user favorite prompt is not found.
  * @returns A response with HTTP status 204 (No Content) on successful deletion.
  */
-const deleteUserFavoritePrompt = async (c: Context) => {
+const deleteUserPromptFavorite = async (c: Context) => {
 	const { promptId } = c.req
 		.param() as unknown as UserPromptFavoriteDeleteParams;
 
@@ -66,20 +66,20 @@ const deleteUserFavoritePrompt = async (c: Context) => {
 
 	const db = Database.instance;
 
-	const existingUserFavoritePrompt = await db.queryOne<UserFavoritePrompt>(
+	const existingUserPromptFavorite = await db.queryOne<UserPromptFavorite>(
 		`SELECT * FROM user_favorite_prompts WHERE user_id = $1 AND prompt_id = $2`,
 		[user.id, promptId],
 	);
-	if (!existingUserFavoritePrompt) {
+	if (!existingUserPromptFavorite) {
 		throwApiError(
 			StatusCodes.NOT_FOUND,
 			'Cannot remove favorite: User favorite prompt not found',
 		);
 	}
 
-	await db.remove('user_favorite_prompts', existingUserFavoritePrompt);
+	await db.remove('user_favorite_prompts', existingUserPromptFavorite);
 
 	return c.status(StatusCodes.NO_CONTENT);
 };
 
-export { createUserFavoritePrompt, deleteUserFavoritePrompt };
+export { createUserPromptFavorite, deleteUserPromptFavorite };

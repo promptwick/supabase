@@ -91,7 +91,8 @@ const getAllPrompts = async (c: Context) => {
 	  p.count_favorite,
 	  p.created_at, 
 	  p.updated_at,
-	  IF(ufp.user_id IS NOT NULL, true, false) AS is_favorited,
+	  IF(upf.user_id IS NOT NULL, true, false) AS is_favorited,
+	  upr.reaction_type AS reaction_type,
 	  JSON_AGG(JSON_BUILD_OBJECT(
 		'id', terms.id,
 		'name', terms.name,
@@ -101,8 +102,10 @@ const getAllPrompts = async (c: Context) => {
 	  FROM prompts AS p
       LEFT JOIN prompt_terms AS pterms ON p.id = pterms.prompt_id
       LEFT JOIN terms AS terms ON pterms.term_id = terms.id
-      LEFT JOIN user_favorite_prompts AS ufp ON p.id = ufp.prompt_id 
-        AND ufp.user_id = $USER_ID
+      LEFT JOIN user_prompt_favorites AS upf ON p.id = upf.prompt_id 
+        AND upf.user_id = $USER_ID
+	  LEFT JOIN user_prompt_reactions AS upr ON p.id = upr.prompt_id 
+        AND upr.user_id = $USER_ID
 	  WHERE 1 = 1`;
 
 	const args: QueryArguments = {
