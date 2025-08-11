@@ -10,8 +10,10 @@ import { errorHandler } from './middlewares/error-handler.ts';
 import { withSupabase } from './middlewares/supabase.ts';
 import { withValidation } from './middlewares/validator.ts';
 import { promptDeleteSchema, promptGetAllSchema, promptGetSchema, promptPatchSchema, promptPostSchema } from './schemas/prompts.ts';
-import { userPromptFavoritePostSchema, userPromptFavoriteDeleteSchema } from './schemas/user_prompt_favorites.ts';
-import { userPromptReactionDeleteSchema, userPromptReactionPostSchema } from './schemas/user_prompt_reactions.ts';
+import { taxonomyDeleteSchema, taxonomyGetSchema, taxonomyPatchSchema, taxonomyPostSchema } from './schemas/taxonomys.ts';
+import { termDeleteSchema, termGetSchema, termPatchSchema, termPostSchema } from './schemas/term.ts';
+import { userPromptFavoritePostSchema, userPromptFavoriteDeleteSchema } from './schemas/user_prompt_favorite.ts';
+import { userPromptReactionDeleteSchema, userPromptReactionPostSchema } from './schemas/user_prompt_reaction.ts';
 
 const app = new Hono();
 
@@ -25,14 +27,14 @@ app.use('*', withSupabase);
 app.use('*', withAuthorization);
 
 /* ------------------------------- Taxonomies ------------------------------- */
-app.get('/taxonomies', withValidation(taxonomyGetAllSchema), getAllTaxonomies);
+app.get('/taxonomies', getAllTaxonomies);
 app.get('/taxonomies/:taxonomyId', withValidation(taxonomyGetSchema), getTaxonomy);
 app.post('/taxonomies', withValidation(taxonomyPostSchema), createTaxonomy);
 app.patch('/taxonomies/:taxonomyId', withValidation(taxonomyPatchSchema), patchTaxonomy);
 app.delete('/taxonomies/:taxonomyId', withValidation(taxonomyDeleteSchema), deleteTaxonomy);
 
 /* ---------------------------------- Terms --------------------------------- */
-app.get('/terms', withValidation(termGetAllSchema), getAllTerms);
+app.get('/terms', getAllTerms);
 app.get('/terms/:termId', withValidation(termGetSchema), getTerm);
 app.post('/terms', withValidation(termPostSchema), createTerm);
 app.patch('/terms/:termId', withValidation(termPatchSchema), patchTerm);
