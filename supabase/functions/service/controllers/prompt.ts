@@ -109,7 +109,7 @@ export const getAllPrompts = async (c: Context) => {
         AND upr.user_id = $USER_ID
 	  WHERE 1 = 1`;
 
-	const args: QueryArguments = {
+	const params: QueryArguments = {
 		limit,
 		offset,
 		order,
@@ -129,12 +129,12 @@ export const getAllPrompts = async (c: Context) => {
 
 	if (termIds && termIds.length > 0) {
 		query = `${query} AND terms.id IN ($TERM_IDS)`;
-		args.term_ids = termIds;
+		params.term_ids = termIds;
 	}
 
 	if (searchQuery) {
 		query = `${query} AND (p.name ILIKE $SEARCH_QUERY OR p.prompt ILIKE $SEARCH_QUERY)`;
-		args.search_query = `%${searchQuery}%`;
+		params.search_query = `%${searchQuery}%`;
 	}
 
 	if (isFavorited) {
@@ -148,7 +148,7 @@ export const getAllPrompts = async (c: Context) => {
 	OFFSET $OFFSET
   `;
 
-	const prompts = await db.query<Prompt & { is_favorited: boolean; terms: Array<Term> }>(query, args);
+	const prompts = await db.query<Prompt & { is_favorited: boolean; terms: Array<Term> }>(query, params);
 
 	c.status(StatusCodes.OK);
 	return c.json(prompts, StatusCodes.OK);

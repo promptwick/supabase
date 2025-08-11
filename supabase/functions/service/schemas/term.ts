@@ -5,6 +5,8 @@ export interface TermGetParams {
 }
 
 export interface TermGetAllQuery {
+	parentTermId?: string;
+	includeChildren?: boolean;
 	taxonomyIds?: string[];
 	localeId?: string;
 }
@@ -36,6 +38,8 @@ export const termGetAllSchema = Joi.object({
 	query: Joi.object({
 		taxonomyIds: Joi.array().items(Joi.string()).optional(),
 		localeId: Joi.string().optional(),
+		parentTermId: Joi.string().optional(),
+		includeChildren: Joi.boolean().optional(),
 	}).required(),
 });
 

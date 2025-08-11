@@ -7,6 +7,7 @@ import Term from '../models/term.ts';
 import Database from '../models/database.ts';
 import { TermDeleteParams, TermGetAllQuery, TermGetParams, TermPatchBody, TermPatchParams, TermPostBody } from '../schemas/term.ts';
 import { throwApiError } from '../utils/error.ts';
+import { QueryArguments } from 'jsr:@db/postgres';
 
 /**
  * Retrieves a term by its ID from the database and returns it as a JSON response.
@@ -52,27 +53,57 @@ export const getTerm = async (c: Context) => {
  * @returns A JSON response containing an array of all terms and a 200 OK status.
  */
 export const getAllTerms = async (c: Context) => {
-	const { taxonomyIds, localeId } = c.req.query() as unknown as TermGetAllQuery;
+	const { taxonomyIds, localeId, parentTermId, includeChildren } = c.req.query() as unknown as TermGetAllQuery;
 
 	const db = Database.instance;
 
-	const terms = await db.query<Term>(
-		`
+	let query = `
 		SELECT
 		  id,
 		  name,
 		  taxonomy_id,
 		  locale_id,
+		  parent_term_id,
 		  created_at,
 		  updated_at
 		FROM terms
 		WHERE deleted_at IS NULL
-		${taxonomyIds ? 'AND taxonomy_id = ANY($1)' : ''}
-		${localeId ? 'AND locale_id = $2' : ''}
-		`,
-		[taxonomyIds, localeId].filter(Boolean),
-	);
-	c.status(StatusCodes.OK);
+	`;
+	const params: QueryArguments = {};
+
+	if (taxonomyIds && taxonomyIds.length > 0) {
+		query += ` AND taxonomy_id = ANY($TAXONOMY_IDS)`;
+		params.taxonomy_ids = taxonomyIds;
+	}
+	if (localeId) {
+		query += ` AND locale_id = $LOCALE_ID`;
+		params.locale_id = localeId;
+	}
+	if (parentTermId) {
+		query += ` AND parent_term_id = $PARENT_TERM_ID`;
+		params.parent_term_id = parentTermId;
+	}
+	if (!includeChildren) {
+		query += ` AND parent_term_id IS NULL`;
+	}
+
+	const terms = await db.query<Term>(query, params);
+
+	if (includeChildren) {
+		// Sort the responses such that the children are assigned inside the "children" attribute in parent
+		const termsMap = new Map<string, Term>();
+		terms.forEach((term) => termsMap.set(term.id, term));
+		terms.forEach((term) => {
+			if (term.parentTermId) {
+				const parent = termsMap.get(term.parentTermId);
+				if (parent) {
+					parent.children!.push(termsMap.get(term.id)!);
+				}
+			}
+		});
+		return c.json(Array.from(termsMap.values()).filter((term) => !term.parentTermId), StatusCodes.OK);
+	}
+
 	return c.json(terms, StatusCodes.OK);
 };
 

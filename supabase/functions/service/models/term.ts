@@ -6,11 +6,22 @@ class Term extends BaseEntity {
   static override defaultFields = ["id", "createdAt", "updatedAt"];
 
   id!: string;
+
   name!: string;
+
+  description?: string;
+
+  parentTermId?: string;
+
   taxonomyId!: string;
+
   localeId!: string;
+
   createdAt!: Date;
+
   updatedAt!: Date;
+
+  children?: Term[];
 }
 
 export default Term;
