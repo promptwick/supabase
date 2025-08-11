@@ -1,0 +1,43 @@
+// controllers/user_prompt_reactions.ts
+import { Context } from 'jsr:@hono/hono';
+import { StatusCodes } from 'npm:http-status-codes';
+import Database from '../models/database.ts';
+import UserPromptReaction from '../models/user_prompt_reaction.ts';
+import { UserPromptReactionDeleteParams, UserPromptReactionPostBody } from '../schemas/user_prompt_reaction.ts';
+
+/**
+ * Create a new user prompt reaction.
+ */
+export const createUserPromptReaction = async (c: Context) => {
+	const { promptId, reactionType } = await c.req.json<UserPromptReactionPostBody>();
+	const db = Database.instance;
+
+	const user = c.get('user');
+
+	const reaction = new UserPromptReaction();
+	reaction.userId = user.id;
+	reaction.promptId = promptId;
+	reaction.reactionType = reactionType;
+	reaction.createdAt = new Date();
+
+	await db.insert('user_prompt_reactions', reaction);
+
+	return c.json({ success: true }, StatusCodes.CREATED);
+};
+
+/**
+ * Delete a user prompt reaction.
+ */
+export const deleteUserPromptReaction = async (c: Context) => {
+	const { promptId } = await c.req.param() as unknown as UserPromptReactionDeleteParams;
+	const db = Database.instance;
+
+	const user = c.get('user');
+
+	await db.query(
+		`DELETE FROM user_prompt_reactions WHERE user_id = $1 AND prompt_id = $2`,
+		[user.id, promptId],
+	);
+
+	return c.json({ success: true }, StatusCodes.OK);
+};

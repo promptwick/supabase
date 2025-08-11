@@ -7,7 +7,7 @@ class UserPromptReaction extends BaseEntity {
 
   userId!: string;
   promptId!: string;
-  reaction!: string;
+  reactionType!: string;
 
   @HasDefault()
   createdAt!: Date;

@@ -2,8 +2,8 @@ import { Context } from 'jsr:@hono/hono';
 import { StatusCodes } from 'npm:http-status-codes';
 import { v7 as uuid } from 'npm:uuid';
 import Database from '../models/database.ts';
-import Taxonomy from '../models/taxonomies.ts';
-import { TaxonomyGetParams, TaxonomyPatchBody, TaxonomyPostBody } from '../schemas/taxonomys.ts';
+import Taxonomy from '../models/taxonomy.ts';
+import { TaxonomyGetParams, TaxonomyPatchBody, TaxonomyPostBody } from '../schemas/taxonomy.ts';
 import { throwApiError } from '../utils/error.ts';
 
 /**
@@ -11,7 +11,7 @@ import { throwApiError } from '../utils/error.ts';
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with taxonomy or error
  */
-const getTaxonomy = async (c: Context) => {
+const getTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
 
@@ -33,7 +33,7 @@ const getTaxonomy = async (c: Context) => {
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with all taxonomies
  */
-const getAllTaxonomies = async (c: Context) => {
+const getAllTaxonomies = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 
 	const taxonomies = await db.query<Taxonomy>(`SELECT * FROM taxonomys`);
@@ -45,7 +45,7 @@ const getAllTaxonomies = async (c: Context) => {
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with success status
  */
-const createTaxonomy = async (c: Context) => {
+const createTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 	const { name } = await c.req.json<TaxonomyPostBody>();
 
@@ -64,7 +64,7 @@ const createTaxonomy = async (c: Context) => {
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with success status or error
  */
-const patchTaxonomy = async (c: Context) => {
+const patchTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
 	const { name } = await c.req.json<TaxonomyPatchBody>();
@@ -92,7 +92,7 @@ const patchTaxonomy = async (c: Context) => {
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with success status or error
  */
-const deleteTaxonomy = async (c: Context) => {
+const deleteTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
 

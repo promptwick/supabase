@@ -1,16 +1,16 @@
 import { Hono } from 'jsr:@hono/hono';
 
 import { createTaxonomy, deleteTaxonomy, getAllTaxonomies, getTaxonomy, patchTaxonomy } from './controllers/taxonomy.ts';
-import { createTerm, deleteTerm, getAllTerms, getTerm, patchTerm } from './controllers/terms.ts';
-import { createPrompt, deletePrompt, getAllPrompts, getPrompt, patchPrompt } from './controllers/prompts.ts';
-import { createUserPromptFavorite, deleteUserPromptFavorite } from './controllers/user_prompt_favorites.ts';
-import { createUserPromptReaction, deleteUserPromptReaction } from './controllers/user_prompt_reactions.ts';
+import { createTerm, deleteTerm, getAllTerms, getTerm, patchTerm } from './controllers/term.ts';
+import { createPrompt, deletePrompt, getAllPrompts, getPrompt, patchPrompt } from './controllers/prompt.ts';
+import { createUserPromptFavorite, deleteUserPromptFavorite } from './controllers/user_prompt_favorite.ts';
+import { createUserPromptReaction, deleteUserPromptReaction } from './controllers/user_prompt_reaction.ts';
 import { withAuthorization } from './middlewares/authorizer.ts';
 import { errorHandler } from './middlewares/error-handler.ts';
 import { withSupabase } from './middlewares/supabase.ts';
 import { withValidation } from './middlewares/validator.ts';
-import { promptDeleteSchema, promptGetAllSchema, promptGetSchema, promptPatchSchema, promptPostSchema } from './schemas/prompts.ts';
-import { taxonomyDeleteSchema, taxonomyGetSchema, taxonomyPatchSchema, taxonomyPostSchema } from './schemas/taxonomys.ts';
+import { promptDeleteSchema, promptGetAllSchema, promptGetSchema, promptPatchSchema, promptPostSchema } from './schemas/prompt.ts';
+import { taxonomyDeleteSchema, taxonomyGetSchema, taxonomyPatchSchema, taxonomyPostSchema } from './schemas/taxonomy.ts';
 import { termDeleteSchema, termGetSchema, termPatchSchema, termPostSchema } from './schemas/term.ts';
 import { userPromptFavoritePostSchema, userPromptFavoriteDeleteSchema } from './schemas/user_prompt_favorite.ts';
 import { userPromptReactionDeleteSchema, userPromptReactionPostSchema } from './schemas/user_prompt_reaction.ts';
