@@ -16,7 +16,7 @@ const getTaxonomy = async (c: Context): Promise<Response> => {
 	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
 
 	const taxonomy = await db.queryOne<Taxonomy>(
-		`SELECT * FROM taxonomys WHERE id = $1`,
+		`SELECT * FROM taxonomies WHERE id = $1`,
 		[taxonomyId],
 	);
 	if (!taxonomy) {
@@ -36,7 +36,7 @@ const getTaxonomy = async (c: Context): Promise<Response> => {
 const getAllTaxonomies = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 
-	const taxonomies = await db.query<Taxonomy>(`SELECT * FROM taxonomys`);
+	const taxonomies = await db.query<Taxonomy>(`SELECT * FROM taxonomies`);
 	return c.json(taxonomies, StatusCodes.OK);
 };
 
@@ -55,7 +55,7 @@ const createTaxonomy = async (c: Context): Promise<Response> => {
 	newTaxonomy.createdAt = new Date();
 	newTaxonomy.updatedAt = new Date();
 
-	await db.insert('taxonomys', newTaxonomy);
+	await db.insert('taxonomies', newTaxonomy);
 	return c.json({ success: true }, StatusCodes.CREATED);
 };
 
@@ -70,7 +70,7 @@ const patchTaxonomy = async (c: Context): Promise<Response> => {
 	const { name } = await c.req.json<TaxonomyPatchBody>();
 
 	const existingTaxonomy = await db.queryOne<Taxonomy>(
-		`SELECT * FROM taxonomys WHERE id = $1`,
+		`SELECT * FROM taxonomies WHERE id = $1`,
 		[taxonomyId],
 	);
 	if (!existingTaxonomy) {
@@ -82,7 +82,7 @@ const patchTaxonomy = async (c: Context): Promise<Response> => {
 
 	existingTaxonomy.name = name;
 	existingTaxonomy.updatedAt = new Date();
-	await db.update('taxonomys', existingTaxonomy, ['name', 'updatedAt']);
+	await db.update('taxonomies', existingTaxonomy, ['name', 'updatedAt']);
 
 	return c.json({ success: true }, StatusCodes.OK);
 };
@@ -97,7 +97,7 @@ const deleteTaxonomy = async (c: Context): Promise<Response> => {
 	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
 
 	const existingTaxonomy = await db.queryOne<Taxonomy>(
-		`SELECT * FROM taxonomys WHERE id = $1`,
+		`SELECT * FROM taxonomies WHERE id = $1`,
 		[taxonomyId],
 	);
 	if (!existingTaxonomy) {
@@ -107,7 +107,7 @@ const deleteTaxonomy = async (c: Context): Promise<Response> => {
 		);
 	}
 
-	await db.remove('taxonomys', existingTaxonomy);
+	await db.remove('taxonomies', existingTaxonomy);
 	return c.json({ success: true }, StatusCodes.OK);
 };
 

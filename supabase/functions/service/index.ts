@@ -15,6 +15,8 @@ import { termDeleteSchema, termGetSchema, termPatchSchema, termPostSchema } from
 import { userPromptFavoritePostSchema, userPromptFavoriteDeleteSchema } from './schemas/user_prompt_favorite.ts';
 import { userPromptReactionDeleteSchema, userPromptReactionPostSchema } from './schemas/user_prompt_reaction.ts';
 
+const BASE_PATH = '/service';
+
 const app = new Hono();
 
 // Apply error handler middleware first to catch all errors
@@ -27,32 +29,32 @@ app.use('*', withSupabase);
 app.use('*', withAuthorization);
 
 /* ------------------------------- Taxonomies ------------------------------- */
-app.get('/taxonomies', getAllTaxonomies);
-app.get('/taxonomies/:taxonomyId', withValidation(taxonomyGetSchema), getTaxonomy);
-app.post('/taxonomies', withValidation(taxonomyPostSchema), createTaxonomy);
-app.patch('/taxonomies/:taxonomyId', withValidation(taxonomyPatchSchema), patchTaxonomy);
-app.delete('/taxonomies/:taxonomyId', withValidation(taxonomyDeleteSchema), deleteTaxonomy);
+app.get(`${BASE_PATH}/taxonomies`, getAllTaxonomies);
+app.get(`${BASE_PATH}/taxonomies/:taxonomyId`, withValidation(taxonomyGetSchema), getTaxonomy);
+app.post(`${BASE_PATH}/taxonomies`, withValidation(taxonomyPostSchema), createTaxonomy);
+app.patch(`${BASE_PATH}/taxonomies/:taxonomyId`, withValidation(taxonomyPatchSchema), patchTaxonomy);
+app.delete(`${BASE_PATH}/taxonomies/:taxonomyId`, withValidation(taxonomyDeleteSchema), deleteTaxonomy);
 
 /* ---------------------------------- Terms --------------------------------- */
-app.get('/terms', getAllTerms);
-app.get('/terms/:termId', withValidation(termGetSchema), getTerm);
-app.post('/terms', withValidation(termPostSchema), createTerm);
-app.patch('/terms/:termId', withValidation(termPatchSchema), patchTerm);
-app.delete('/terms/:termId', withValidation(termDeleteSchema), deleteTerm);
+app.get(`${BASE_PATH}/terms`, getAllTerms);
+app.get(`${BASE_PATH}/terms/:termId`, withValidation(termGetSchema), getTerm);
+app.post(`${BASE_PATH}/terms`, withValidation(termPostSchema), createTerm);
+app.patch(`${BASE_PATH}/terms/:termId`, withValidation(termPatchSchema), patchTerm);
+app.delete(`${BASE_PATH}/terms/:termId`, withValidation(termDeleteSchema), deleteTerm);
 
 /* --------------------------------- Prompts -------------------------------- */
-app.get('/prompts', withValidation(promptGetAllSchema), getAllPrompts);
-app.get('/prompts/:promptId', withValidation(promptGetSchema), getPrompt);
-app.post('/prompts', withValidation(promptPostSchema), createPrompt);
-app.patch('/prompts/:promptId', withValidation(promptPatchSchema), patchPrompt);
-app.delete('/prompts/:promptId', withValidation(promptDeleteSchema), deletePrompt);
+app.get(`${BASE_PATH}/prompts`, withValidation(promptGetAllSchema), getAllPrompts);
+app.get(`${BASE_PATH}/prompts/:promptId`, withValidation(promptGetSchema), getPrompt);
+app.post(`${BASE_PATH}/prompts`, withValidation(promptPostSchema), createPrompt);
+app.patch(`${BASE_PATH}/prompts/:promptId`, withValidation(promptPatchSchema), patchPrompt);
+app.delete(`${BASE_PATH}/prompts/:promptId`, withValidation(promptDeleteSchema), deletePrompt);
 
 /* -------------------------- User Prompt Favorites -------------------------- */
-app.post('/prompts/:promptId/favorites', withValidation(userPromptFavoritePostSchema), createUserPromptFavorite);
-app.delete('/prompts/:promptId/favorites', withValidation(userPromptFavoriteDeleteSchema), deleteUserPromptFavorite);
+app.post(`${BASE_PATH}/prompts/:promptId/favorites`, withValidation(userPromptFavoritePostSchema), createUserPromptFavorite);
+app.delete(`${BASE_PATH}/prompts/:promptId/favorites`, withValidation(userPromptFavoriteDeleteSchema), deleteUserPromptFavorite);
 
 /* -------------------------- User Prompt Reactions -------------------------- */
-app.post('/prompts/:promptId/reactions', withValidation(userPromptReactionPostSchema), createUserPromptReaction);
-app.delete('/prompts/:promptId/reactions', withValidation(userPromptReactionDeleteSchema), deleteUserPromptReaction);
+app.post(`${BASE_PATH}/prompts/:promptId/reactions`, withValidation(userPromptReactionPostSchema), createUserPromptReaction);
+app.delete(`${BASE_PATH}/prompts/:promptId/reactions`, withValidation(userPromptReactionDeleteSchema), deleteUserPromptReaction);
 
 Deno.serve(app.fetch);

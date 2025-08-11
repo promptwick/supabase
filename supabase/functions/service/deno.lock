@@ -1,6 +1,15 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@db/postgres@*": "0.19.5",
+    "jsr:@hono/hono@*": "4.7.1",
+    "jsr:@std/bytes@^1.0.5": "1.0.6",
+    "jsr:@std/crypto@^1.0.4": "1.0.5",
+    "jsr:@std/encoding@^1.0.9": "1.0.10",
+    "jsr:@std/fmt@^1.0.6": "1.0.8",
+    "jsr:@std/internal@^1.0.9": "1.0.10",
+    "jsr:@std/path@^1.0.8": "1.1.1",
+    "jsr:@supabase/supabase-js@*": "2.48.1",
     "npm:@algolia/client-search@*": "5.20.3",
     "npm:@algolia/requester-fetch@*": "5.20.3",
     "npm:@eslint/js@*": "9.20.0",
@@ -17,6 +26,53 @@
     "npm:joi@*": "18.0.0",
     "npm:pino@*": "9.6.0",
     "npm:uuid@*": "11.1.0"
+  },
+  "jsr": {
+    "@db/postgres@0.19.5": {
+      "integrity": "afdbe608bd066cda2ee5dba37c416d332098b9238c51aec223331108e281954c",
+      "dependencies": [
+        "jsr:@std/bytes",
+        "jsr:@std/crypto",
+        "jsr:@std/encoding",
+        "jsr:@std/fmt",
+        "jsr:@std/path"
+      ]
+    },
+    "@hono/hono@4.7.1": {
+      "integrity": "f75aaf6a026ad05406e60125a70a3d2a77e3b62991f8c4e38c624bdfc1a1dc26"
+    },
+    "@std/bytes@1.0.6": {
+      "integrity": "f6ac6adbd8ccd99314045f5703e23af0a68d7f7e58364b47d2c7f408aeb5820a"
+    },
+    "@std/crypto@1.0.5": {
+      "integrity": "0dcfbb319fe0bba1bd3af904ceb4f948cde1b92979ec1614528380ed308a3b40"
+    },
+    "@std/encoding@1.0.10": {
+      "integrity": "8783c6384a2d13abd5e9e87a7ae0520a30e9f56aeeaa3bdf910a3eaaf5c811a1"
+    },
+    "@std/fmt@1.0.8": {
+      "integrity": "71e1fc498787e4434d213647a6e43e794af4fd393ef8f52062246e06f7e372b7"
+    },
+    "@std/internal@1.0.10": {
+      "integrity": "e3be62ce42cab0e177c27698e5d9800122f67b766a0bea6ca4867886cbde8cf7"
+    },
+    "@std/path@1.1.1": {
+      "integrity": "fe00026bd3a7e6a27f73709b83c607798be40e20c81dde655ce34052fd82ec76",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@supabase/supabase-js@2.48.1": {
+      "integrity": "747e85c2a546efcc9f84b343b08e10e3818d468ae214506b59dc65a36fd2d702",
+      "dependencies": [
+        "npm:@supabase/auth-js",
+        "npm:@supabase/functions-js",
+        "npm:@supabase/node-fetch",
+        "npm:@supabase/postgrest-js",
+        "npm:@supabase/realtime-js",
+        "npm:@supabase/storage-js"
+      ]
+    }
   },
   "npm": {
     "@algolia/client-common@5.20.3": {
@@ -298,6 +354,27 @@
     }
   },
   "remote": {
+    "https://deno.land/x/case@2.2.0/camelCase.ts": "b9a4cf361a7c9740ecb75e00b5e2c006bd4e5d40e442d26c5f2760286fa66796",
+    "https://deno.land/x/case@2.2.0/constantCase.ts": "c698fc32f00cd267c1684b1d413d784260d7e7798f2bf506803e418497d839b5",
+    "https://deno.land/x/case@2.2.0/dotCase.ts": "03ae55d5635e6a4ca894a003d9297cd9cd283af2e7d761dd3de13663849a9423",
+    "https://deno.land/x/case@2.2.0/headerCase.ts": "3f6c8ab2ab30a88147326bce28a00d1189ec98ab61c83ab72ce79e852afddc4a",
+    "https://deno.land/x/case@2.2.0/lowerCase.ts": "d75eb55cadfa589f9f2a973924a8a209054477d9574da669410f4d817ab25b41",
+    "https://deno.land/x/case@2.2.0/lowerFirstCase.ts": "b001efbf2d715b53d066b22cdbf8eda7f99aa7108e3d12fb02f80d499bae93d9",
+    "https://deno.land/x/case@2.2.0/mod.ts": "28b0b1329c7b18730799ac05627a433d9547c04b9bfb429116247c60edecd97b",
+    "https://deno.land/x/case@2.2.0/normalCase.ts": "085c8b6f9d69283c8b86f2e504d43278c2be8b7e56a3ed8d4a5f395e398bdc29",
+    "https://deno.land/x/case@2.2.0/paramCase.ts": "a234c9c17dfbaddee647b6571c2c90e8f6530123fed26c4546f4063d67c1609f",
+    "https://deno.land/x/case@2.2.0/pascalCase.ts": "4b3ef0a68173871a821d306d4067e8f72d42aeeef1eea6aeab30af6bfa3d7427",
+    "https://deno.land/x/case@2.2.0/pathCase.ts": "330a34b4df365b0291d8e36158235340131730aae6f6add66962ed2d0fbead4a",
+    "https://deno.land/x/case@2.2.0/sentenceCase.ts": "b312cef147a13b58ffdf3c36bf55b33aa8322c91f4aa9b32318f3911bb92327f",
+    "https://deno.land/x/case@2.2.0/snakeCase.ts": "e5ac1e08532ca397aa3150a0a3255d59f63a186d934e5094a8ffd24cbca7f955",
+    "https://deno.land/x/case@2.2.0/swapCase.ts": "bb03742fcf613f733890680ceca1b39b65ed290f36a317fcd47edd517c4e0e1e",
+    "https://deno.land/x/case@2.2.0/titleCase.ts": "c287131ea2c955e67cdd5cf604de96d31a8e2813305759922b9ed27e3be354e7",
+    "https://deno.land/x/case@2.2.0/types.ts": "8e2bd6edaa27c0d1972c0d5b76698564740f37b4d3787d58d1fb5f48de611e61",
+    "https://deno.land/x/case@2.2.0/upperCase.ts": "6cca267bb04d098bf4abf21e42e60c3e68ede89b12e525643c6b6eff3e10de34",
+    "https://deno.land/x/case@2.2.0/upperFirstCase.ts": "b964c2d8d3a85c78cd35f609135cbde99d84b9522a21470336b5af80a37facbd",
+    "https://deno.land/x/case@2.2.0/vendor/camelCaseRegexp.ts": "7d9ff02aad4ab6429eeab7c7353f7bcdd6cc5909a8bd3dda97918c8bbb7621ae",
+    "https://deno.land/x/case@2.2.0/vendor/camelCaseUpperRegexp.ts": "292de54a698370f90adcdf95727993d09888b7f33d17f72f8e54ba75f7791787",
+    "https://deno.land/x/case@2.2.0/vendor/nonWordRegexp.ts": "c1a052629a694144b48c66b0175a22a83f4d61cb40f4e45293fc5d6b123f927e",
     "https://deno.land/x/reflect_metadata@v0.1.12/Reflect.ts": "eced7b7e642853c6fb9a209f96ddd1932ab1e0fc3c514705c87d56169c8fe260",
     "https://deno.land/x/reflect_metadata@v0.1.12/mod.ts": "8b5e3b20f1e604c118df433e84a409b1d5116e885001047134cc42ecf84fa2cd"
   }

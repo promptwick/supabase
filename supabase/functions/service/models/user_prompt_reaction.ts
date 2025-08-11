@@ -1,18 +1,15 @@
-import BaseEntity, { HasDefault, PrimaryKey } from "./base_entity.ts";
+import BaseEntity from "./base_entity.ts";
+
 
 class UserPromptReaction extends BaseEntity {
-  @HasDefault()
-  @PrimaryKey()
-  id!: string;
+  static override primaryKeys = ["id"];
+  static override defaultFields = ["id", "createdAt", "updatedAt"];
 
+  id!: string;
   userId!: string;
   promptId!: string;
   reactionType!: string;
-
-  @HasDefault()
   createdAt!: Date;
-
-  @HasDefault()
   updatedAt!: Date;
 }
 

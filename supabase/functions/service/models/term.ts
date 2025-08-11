@@ -1,20 +1,15 @@
-import BaseEntity, { HasDefault, PrimaryKey } from "./base_entity.ts";
+import BaseEntity from "./base_entity.ts";
+
 
 class Term extends BaseEntity {
-  @HasDefault()
-  @PrimaryKey()
+  static override primaryKeys = ["id"];
+  static override defaultFields = ["id", "createdAt", "updatedAt"];
+
   id!: string;
-
   name!: string;
-
   taxonomyId!: string;
-
   localeId!: string;
-
-  @HasDefault()
   createdAt!: Date;
-
-  @HasDefault()
   updatedAt!: Date;
 }
 

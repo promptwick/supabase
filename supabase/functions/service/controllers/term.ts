@@ -3,9 +3,9 @@ import { Context } from 'jsr:@hono/hono';
 import { StatusCodes } from 'npm:http-status-codes';
 import { v7 as uuid } from 'npm:uuid';
 
-import Term from '../models/terms.ts';
+import Term from '../models/term.ts';
 import Database from '../models/database.ts';
-import { TermDeleteParams, TermGetParams, TermPatchBody, TermPatchParams, TermPostBody } from '../schemas/terms.ts';
+import { TermDeleteParams, TermGetParams, TermPatchBody, TermPatchParams, TermPostBody } from '../schemas/term.ts';
 import { throwApiError } from '../utils/error.ts';
 
 /**

@@ -7,7 +7,7 @@ import { v7 as uuid } from 'npm:uuid';
 import Database from '../models/database.ts';
 import Prompt from '../models/prompt.ts';
 import PromptTerm from '../models/prompt_term.ts';
-import Term from '../models/terms.ts';
+import Term from '../models/term.ts';
 import { PromptDeleteParams, PromptGetAllQuery, PromptGetParams, PromptPatchBody, PromptPatchParams, PromptPostBody } from '../schemas/prompt.ts';
 import { throwApiError } from '../utils/error.ts';
 
