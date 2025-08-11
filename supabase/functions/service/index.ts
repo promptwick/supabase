@@ -11,7 +11,7 @@ import { withSupabase } from './middlewares/supabase.ts';
 import { withValidation } from './middlewares/validator.ts';
 import { promptDeleteSchema, promptGetAllSchema, promptGetSchema, promptPatchSchema, promptPostSchema } from './schemas/prompt.ts';
 import { taxonomyDeleteSchema, taxonomyGetSchema, taxonomyPatchSchema, taxonomyPostSchema } from './schemas/taxonomy.ts';
-import { termDeleteSchema, termGetSchema, termPatchSchema, termPostSchema } from './schemas/term.ts';
+import { termDeleteSchema, termGetAllSchema, termGetSchema, termPatchSchema, termPostSchema } from './schemas/term.ts';
 import { userPromptFavoritePostSchema, userPromptFavoriteDeleteSchema } from './schemas/user_prompt_favorite.ts';
 import { userPromptReactionDeleteSchema, userPromptReactionPostSchema } from './schemas/user_prompt_reaction.ts';
 
@@ -36,7 +36,7 @@ app.patch(`${BASE_PATH}/taxonomies/:taxonomyId`, withValidation(taxonomyPatchSch
 app.delete(`${BASE_PATH}/taxonomies/:taxonomyId`, withValidation(taxonomyDeleteSchema), deleteTaxonomy);
 
 /* ---------------------------------- Terms --------------------------------- */
-app.get(`${BASE_PATH}/terms`, getAllTerms);
+app.get(`${BASE_PATH}/terms`, withValidation(termGetAllSchema), getAllTerms);
 app.get(`${BASE_PATH}/terms/:termId`, withValidation(termGetSchema), getTerm);
 app.post(`${BASE_PATH}/terms`, withValidation(termPostSchema), createTerm);
 app.patch(`${BASE_PATH}/terms/:termId`, withValidation(termPatchSchema), patchTerm);

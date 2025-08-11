@@ -6,7 +6,10 @@ import UserPromptReaction from '../models/user_prompt_reaction.ts';
 import { UserPromptReactionDeleteParams, UserPromptReactionPostBody } from '../schemas/user_prompt_reaction.ts';
 
 /**
- * Create a new user prompt reaction.
+ * Handles the creation of a user prompt reaction.
+ *
+ * @param c - The request context containing the user and request data.
+ * @returns A JSON response indicating success with HTTP status 201 (Created).
  */
 export const createUserPromptReaction = async (c: Context) => {
 	const { promptId, reactionType } = await c.req.json<UserPromptReactionPostBody>();
@@ -26,7 +29,10 @@ export const createUserPromptReaction = async (c: Context) => {
 };
 
 /**
- * Delete a user prompt reaction.
+ * Handles the deletion of a user prompt reaction.
+ *
+ * @param c - The request context containing the user and prompt ID.
+ * @returns A JSON response indicating success with HTTP status 200 (OK).
  */
 export const deleteUserPromptReaction = async (c: Context) => {
 	const { promptId } = await c.req.param() as unknown as UserPromptReactionDeleteParams;

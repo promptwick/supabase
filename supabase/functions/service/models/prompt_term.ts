@@ -7,7 +7,7 @@ class PromptTerm extends BaseEntity {
 	id!: string;
 
 	promptId!: string;
-  
+
 	termId!: string;
 
 	createdAt!: Date;

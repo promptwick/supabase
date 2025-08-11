@@ -11,12 +11,24 @@ import { throwApiError } from '../utils/error.ts';
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with taxonomy or error
  */
-const getTaxonomy = async (c: Context): Promise<Response> => {
+export const getTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
 
 	const taxonomy = await db.queryOne<Taxonomy>(
-		`SELECT * FROM taxonomies WHERE id = $1`,
+		`
+		SELECT
+		  id,
+		  name,
+		  description,
+		  multiple_terms,
+		  locale_id,
+		  created_at,
+		  updated_at
+		FROM taxonomies
+		WHERE id = $1
+		  AND deleted_at IS NULL
+		`,
 		[taxonomyId],
 	);
 	if (!taxonomy) {
@@ -33,10 +45,23 @@ const getTaxonomy = async (c: Context): Promise<Response> => {
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with all taxonomies
  */
-const getAllTaxonomies = async (c: Context): Promise<Response> => {
+export const getAllTaxonomies = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 
-	const taxonomies = await db.query<Taxonomy>(`SELECT * FROM taxonomies`);
+	const taxonomies = await db.query<Taxonomy>(
+		`
+		SELECT
+		  id,
+		  name,
+		  description,
+		  multiple_terms,
+		  locale_id,
+		  created_at,
+		  updated_at
+		FROM taxonomies
+		WHERE deleted_at IS NULL
+		`,
+	);
 	return c.json(taxonomies, StatusCodes.OK);
 };
 
@@ -45,7 +70,7 @@ const getAllTaxonomies = async (c: Context): Promise<Response> => {
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with success status
  */
-const createTaxonomy = async (c: Context): Promise<Response> => {
+export const createTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 	const { name } = await c.req.json<TaxonomyPostBody>();
 
@@ -64,13 +89,25 @@ const createTaxonomy = async (c: Context): Promise<Response> => {
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with success status or error
  */
-const patchTaxonomy = async (c: Context): Promise<Response> => {
+export const patchTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
 	const { name } = await c.req.json<TaxonomyPatchBody>();
 
 	const existingTaxonomy = await db.queryOne<Taxonomy>(
-		`SELECT * FROM taxonomies WHERE id = $1`,
+		`
+		SELECT
+		  id,
+		  name,
+		  description,
+		  multiple_terms,
+		  locale_id,
+		  created_at,
+		  updated_at
+		FROM taxonomies
+		WHERE id = $1
+		  AND deleted_at IS NULL
+		`,
 		[taxonomyId],
 	);
 	if (!existingTaxonomy) {
@@ -92,12 +129,25 @@ const patchTaxonomy = async (c: Context): Promise<Response> => {
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with success status or error
  */
-const deleteTaxonomy = async (c: Context): Promise<Response> => {
+
+export const deleteTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
 
 	const existingTaxonomy = await db.queryOne<Taxonomy>(
-		`SELECT * FROM taxonomies WHERE id = $1`,
+		`
+		SELECT
+		  id,
+		  name,
+		  description,
+		  multiple_terms,
+		  locale_id,
+		  created_at,
+		  updated_at
+		FROM taxonomies
+		WHERE id = $1
+		  AND deleted_at IS NULL
+		`,
 		[taxonomyId],
 	);
 	if (!existingTaxonomy) {
@@ -110,5 +160,3 @@ const deleteTaxonomy = async (c: Context): Promise<Response> => {
 	await db.remove('taxonomies', existingTaxonomy);
 	return c.json({ success: true }, StatusCodes.OK);
 };
-
-export { createTaxonomy, deleteTaxonomy, getAllTaxonomies, getTaxonomy, patchTaxonomy };

@@ -16,7 +16,7 @@ import { throwApiError } from '../utils/error.ts';
  * @returns A JSON response indicating success with HTTP status 201 (Created).
  * @throws {ApiError} If the user has already favorited the prompt (HTTP 409 Conflict) or on other database errors.
  */
-const createUserPromptFavorite = async (c: Context) => {
+export const createUserPromptFavorite = async (c: Context) => {
 	const { promptId } = await c.req.json<
 		UserPromptFavoritePostBody
 	>();
@@ -58,7 +58,7 @@ const createUserPromptFavorite = async (c: Context) => {
  * @throws {ApiError} If the user favorite prompt is not found.
  * @returns A response with HTTP status 204 (No Content) on successful deletion.
  */
-const deleteUserPromptFavorite = async (c: Context) => {
+export const deleteUserPromptFavorite = async (c: Context) => {
 	const { promptId } = c.req
 		.param() as unknown as UserPromptFavoriteDeleteParams;
 
@@ -81,5 +81,3 @@ const deleteUserPromptFavorite = async (c: Context) => {
 
 	return c.status(StatusCodes.NO_CONTENT);
 };
-
-export { createUserPromptFavorite, deleteUserPromptFavorite };

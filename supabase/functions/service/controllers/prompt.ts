@@ -18,13 +18,14 @@ import { throwApiError } from '../utils/error.ts';
  * @returns A Promise that resolves to a JSON response containing the prompt data and a 200 OK status.
  * @throws {ApiError} If the prompt with the specified ID does not exist, throws an error with a 404 Not Found status.
  */
-const getPrompt = async (c: Context) => {
+
+export const getPrompt = async (c: Context) => {
 	const { promptId } = c.req.param() as unknown as PromptGetParams;
 
 	const db = Database.instance;
 
 	const prompt = await db.queryOne<Prompt>(
-		`SELECT * FROM prompts WHERE id = $1`,
+		`SELECT id, name, prompt, is_public, is_latest_version, parent_prompt_id, version, locale_id, count_reaction_up, count_reaction_down, count_favorite, created_at, updated_at, created_by, updated_by FROM prompts WHERE id = $1 AND deleted_at IS NULL`,
 		[promptId],
 	);
 	if (!prompt) {
@@ -62,7 +63,7 @@ const getPrompt = async (c: Context) => {
  * - Only prompts that are public or created by the current user are returned unless otherwise filtered.
  * - Requires the user to be authenticated and available in the context.
  */
-const getAllPrompts = async (c: Context) => {
+export const getAllPrompts = async (c: Context) => {
 	const db = Database.instance;
 	const {
 		limit,
@@ -167,7 +168,7 @@ const getAllPrompts = async (c: Context) => {
  *
  * @throws {ApiError} If the parent prompt or any term references are invalid.
  */
-const createPrompt = async (c: Context) => {
+export const createPrompt = async (c: Context) => {
 	const { prompt, isPublic, name, parentPromptId, localeId, termIds } = await c.req.json<PromptPostBody>();
 
 	const user = c.get('user');
@@ -254,7 +255,8 @@ const createPrompt = async (c: Context) => {
  * @returns A 204 No Content response on success.
  * @throws {ApiError} If the prompt does not exist, is not owned by the user, or term references are invalid.
  */
-const patchPrompt = async (c: Context) => {
+
+export const patchPrompt = async (c: Context) => {
 	const { promptId } = c.req.param() as unknown as PromptPatchParams;
 	const { name, prompt, termIds } = await c.req.json<PromptPatchBody>();
 
@@ -264,7 +266,7 @@ const patchPrompt = async (c: Context) => {
 
 	// Validate existing prompt
 	const existingPrompt = await db.queryOne<Prompt>(
-		`SELECT * FROM prompts WHERE id = $1`,
+		`SELECT id, name, prompt, is_public, is_latest_version, parent_prompt_id, version, locale_id, count_reaction_up, count_reaction_down, count_favorite, created_at, updated_at, created_by, updated_by FROM prompts WHERE id = $1 AND deleted_at IS NULL`,
 		[promptId],
 	);
 
@@ -278,7 +280,7 @@ const patchPrompt = async (c: Context) => {
 	if (termIds && termIds.length) {
 		// Validate term IDs
 		const validTermIds = await db.query<Term>(
-			`SELECT * FROM terms WHERE id IN ($1)`,
+			`SELECT id, name, taxonomy_id, locale_id, created_at, updated_at FROM terms WHERE id IN ($1) AND deleted_at IS NULL`,
 			[termIds],
 		);
 		if (validTermIds.length !== termIds.length) {
@@ -312,7 +314,7 @@ const patchPrompt = async (c: Context) => {
 
 		// Get terms associated with existing prompt
 		const existingPromptTerms = await db.query<PromptTerm>(
-			`SELECT * FROM prompt_terms WHERE prompt_id = $1`,
+			`SELECT prompt_id, term_id, created_at FROM prompt_terms WHERE prompt_id = $1`,
 			[promptId],
 		);
 
@@ -351,7 +353,7 @@ const patchPrompt = async (c: Context) => {
  * @returns A 204 No Content response on success.
  * @throws {ApiError} If the prompt does not exist.
  */
-const deletePrompt = async (c: Context) => {
+export const deletePrompt = async (c: Context) => {
 	const { promptId } = c.req.param() as unknown as PromptDeleteParams;
 
 	const db = Database.instance;
@@ -387,4 +389,3 @@ const deletePrompt = async (c: Context) => {
 	return c.status(StatusCodes.NO_CONTENT);
 };
 
-export { createPrompt, deletePrompt, getAllPrompts, getPrompt, patchPrompt };
