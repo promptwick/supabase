@@ -10,7 +10,9 @@ import PromptTerm from '../models/prompt_term.ts';
 import Term from '../models/term.ts';
 import { PromptDeleteParams, PromptGetAllQuery, PromptGetParams, PromptPatchBody, PromptPatchParams, PromptPostBody } from '../schemas/prompt.ts';
 import { throwApiError } from '../utils/error.ts';
+import logger from '../utils/logger.ts';
 
+const log = logger.child('controllers.prompt');
 /**
  * Retrieves a prompt by its ID from the database and returns it as a JSON response.
  *
@@ -68,8 +70,8 @@ export const getAllPrompts = async (c: Context) => {
 	const {
 		limit,
 		offset,
-		order,
-		sortBy,
+		order = 'desc',
+		sortBy = 'created_at',
 		termIds,
 		isPublic,
 		searchQuery,
@@ -79,35 +81,35 @@ export const getAllPrompts = async (c: Context) => {
 	const user = c.get('user');
 
 	let query = `
-	SELECT p.id, 
-	  p.name, 
-	  p.prompt, 
-	  p.is_public, 
-	  p.is_latest_version,
-	  p.parent_prompt_id, 
-	  p.version, 
-	  p.locale_id,
-	  p.count_reaction_up,
-	  p.count_reaction_down,
-	  p.count_favorite,
-	  p.created_at, 
-	  p.updated_at,
-	  IF(upf.user_id IS NOT NULL, true, false) AS is_favorited,
-	  upr.reaction_type AS reaction_type,
-	  JSON_AGG(JSON_BUILD_OBJECT(
-		'id', terms.id,
-		'name', terms.name,
-		'taxonomy_id', terms.taxonomy_id
-	  )) AS terms
+		SELECT p.id, 
+		p.name, 
+		p.prompt, 
+		p.is_public, 
+		p.is_latest_version,
+		p.parent_prompt_id, 
+		p.version, 
+		p.locale_id,
+		p.count_reaction_up,
+		p.count_reaction_down,
+		p.count_favorite,
+		p.created_at, 
+		p.updated_at,
+		CASE WHEN upf.user_id IS NOT NULL THEN true ELSE false END AS is_favorited,
+		upr.reaction_type AS reaction_type,
+		JSON_AGG(JSON_BUILD_OBJECT(
+			'id', terms.id,
+			'name', terms.name,
+			'taxonomy_id', terms.taxonomy_id
+		)) AS terms
 
-	  FROM prompts AS p
-      LEFT JOIN prompt_terms AS pterms ON p.id = pterms.prompt_id
-      LEFT JOIN terms AS terms ON pterms.term_id = terms.id
-      LEFT JOIN user_prompt_favorites AS upf ON p.id = upf.prompt_id 
-        AND upf.user_id = $USER_ID
-	  LEFT JOIN user_prompt_reactions AS upr ON p.id = upr.prompt_id 
-        AND upr.user_id = $USER_ID
-	  WHERE 1 = 1`;
+		FROM prompts AS p
+		LEFT JOIN prompt_terms AS pterms ON p.id = pterms.prompt_id
+		LEFT JOIN terms AS terms ON pterms.term_id = terms.id
+		LEFT JOIN user_prompt_favorites AS upf ON p.id = upf.prompt_id 
+			AND upf.user_id = $USER_ID
+		LEFT JOIN user_prompt_reactions AS upr ON p.id = upr.prompt_id 
+			AND upr.user_id = $USER_ID
+		WHERE 1 = 1`;
 
 	const params: QueryArguments = {
 		limit,
@@ -142,7 +144,7 @@ export const getAllPrompts = async (c: Context) => {
 	}
 
 	query = `${query}
-	GROUP BY p.id
+	GROUP BY p.id, upf.user_id, upr.reaction_type
 	ORDER BY p.${sortBy} ${order}
 	LIMIT $LIMIT
 	OFFSET $OFFSET
@@ -150,7 +152,8 @@ export const getAllPrompts = async (c: Context) => {
 
 	const prompts = await db.query<Prompt & { is_favorited: boolean; terms: Array<Term> }>(query, params);
 
-	c.status(StatusCodes.OK);
+	log.debug(`Retrieved ${prompts.length} prompts from database`);
+
 	return c.json(prompts, StatusCodes.OK);
 };
 
@@ -388,4 +391,3 @@ export const deletePrompt = async (c: Context) => {
 
 	return c.status(StatusCodes.NO_CONTENT);
 };
-

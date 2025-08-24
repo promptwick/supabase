@@ -5,7 +5,7 @@ import logger from '../utils/logger.ts';
 
 import BaseEntity, { isExtraField } from './base_entity.ts';
 
-const log = logger.child({ namespace: 'models.database' });
+const log = logger.child('models.database');
 
 export default class Database {
 	static #instance: Database;
@@ -16,7 +16,7 @@ export default class Database {
 
 	constructor(debug = false) {
 		this.debug = debug;
-		const dsn = Deno.env.get("SUPABASE_DB_URL");
+		const dsn = Deno.env.get('SUPABASE_DB_URL');
 		this.pool = new Pool(dsn, 3, true);
 	}
 
@@ -75,7 +75,7 @@ export default class Database {
 			}`;
 		}
 
-		log.debug(`Executing statement: ${stmt} with values %o`, values);
+		log.debug(`Executing statement: ${stmt} with values %o`, { values });
 
 		if (transaction !== null) {
 			await transaction.queryArray(stmt, values);
@@ -87,7 +87,7 @@ export default class Database {
 			conn = await this.pool.connect();
 			await conn.queryArray(stmt, values);
 		} catch (error) {
-			log.error(`Error executing statement: ${stmt} with values %o`, values);
+			log.error(`Error executing statement: ${stmt} with values %o`, { values });
 			throw error;
 		} finally {
 			if (conn) {
@@ -128,7 +128,7 @@ export default class Database {
 			.concat(primaryKeys.map((attr) => (record as never)[attr]))
 			.map(this.convertForSql);
 
-		log.debug(`Executing statement: ${stmt} with values %o`, values);
+		log.debug(`Executing statement: ${stmt} with values %o`, { values });
 
 		if (transaction !== null) {
 			await transaction.queryArray(stmt, values);
@@ -140,7 +140,7 @@ export default class Database {
 			conn = await this.pool.connect();
 			await conn.queryArray(stmt, values);
 		} catch (error) {
-			log.error(`Error executing statement: ${stmt} with values %o`, values);
+			log.error(`Error executing statement: ${stmt} with values %o`, { values });
 			throw error;
 		} finally {
 			if (conn) {
@@ -161,7 +161,7 @@ export default class Database {
 		const stmt = `DELETE FROM ${tableName} WHERE ${conditions.join(' AND ')}`;
 		const values = primaryKeys.map((attr) => (record as never)[attr]).map(this.convertForSql);
 
-		log.debug(`Executing statement: ${stmt} with values %o`, values);
+		log.debug(`Executing statement: ${stmt} with values %o`, { values });
 
 		if (transaction !== null) {
 			await transaction.queryArray(stmt, values);
@@ -173,7 +173,7 @@ export default class Database {
 			conn = await this.pool.connect();
 			await conn.queryArray(stmt, values);
 		} catch (error) {
-			log.error(`Error executing statement: ${stmt} with values %o`, values);
+			log.error(`Error executing statement: ${stmt} with values %o`, { values });
 			throw error;
 		} finally {
 			if (conn) {
@@ -187,7 +187,7 @@ export default class Database {
 		values: QueryArguments = [],
 		transaction: Transaction | null = null,
 	): Promise<T[]> {
-		log.debug(`Executing query: ${query} with values %o`, values);
+		log.debug(`Executing query: ${query} with values %o`, { values });
 
 		if (transaction !== null) {
 			const { rows } = await transaction.queryObject<T>(query, values);
@@ -201,7 +201,7 @@ export default class Database {
 
 			return rows;
 		} catch (error) {
-			log.error(`Error executing query: ${query} with values %o`, values);
+			log.error(`Error executing query: ${query} with values %o`, { values });
 			throw error;
 		} finally {
 			if (conn) {
@@ -223,7 +223,7 @@ export default class Database {
 	}
 
 	public async queryRaw(query: string, values: QueryArguments): Promise<unknown[]> {
-		log.debug(`Executing raw query: ${query} with values %o`, values);
+		log.debug(`Executing raw query: ${query} with values %o`, { values });
 
 		let conn;
 		try {
@@ -232,7 +232,7 @@ export default class Database {
 
 			return rows;
 		} catch (error) {
-			log.error(`Error executing raw query: ${query} with values %o`, values);
+			log.error(`Error executing raw query: ${query} with values %o`, { values });
 			throw error;
 		} finally {
 			if (conn) {

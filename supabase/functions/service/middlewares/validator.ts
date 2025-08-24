@@ -3,6 +3,10 @@ import { StatusCodes } from 'npm:http-status-codes';
 import type { Context, Next } from 'jsr:@hono/hono';
 import { HTTPException } from 'jsr:@hono/hono/http-exception';
 
+import logger from '../utils/logger.ts';
+
+const log = logger.child('middlewares/validator');
+
 /**
  * Middleware factory that validates the incoming request using the provided schema.
  *
@@ -14,8 +18,15 @@ import { HTTPException } from 'jsr:@hono/hono/http-exception';
  * @example
  * app.use(withValidation(mySchema));
  */
-export const withValidation = (schema: Schema) => (c: Context, next: Next): void => {
-	const { error } = schema.validate(c.req, {
+export const withValidation = (schema: Schema) => async (c: Context, next: Next): Promise<void> => {
+	const params = c.req.param();
+	const query = c.req.query();
+	const body = await (async () => {
+		const text = await c.req.text();
+		return text ? JSON.parse(text) : null;
+	})();
+
+	const { error } = schema.validate({ params, query, body }, {
 		abortEarly: false, // Equivalent to allErrors: true
 		allowUnknown: false,
 		stripUnknown: true,
@@ -23,10 +34,11 @@ export const withValidation = (schema: Schema) => (c: Context, next: Next): void
 	});
 	if (error) {
 		const errorMessage = error.details.map((detail: { message: string }) => detail.message).join(', ');
+		log.error('Validation failed:', { error: errorMessage });
 		throw new HTTPException(StatusCodes.BAD_REQUEST, {
 			message: errorMessage,
 		});
 	} else {
-		next();
+		await next();
 	}
 };

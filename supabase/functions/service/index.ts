@@ -1,4 +1,5 @@
 import { Hono } from 'jsr:@hono/hono';
+import { cors } from 'jsr:@hono/hono/cors';
 
 import { createTaxonomy, deleteTaxonomy, getAllTaxonomies, getTaxonomy, patchTaxonomy } from './controllers/taxonomy.ts';
 import { createTerm, deleteTerm, getAllTerms, getTerm, patchTerm } from './controllers/term.ts';
@@ -12,15 +13,26 @@ import { withValidation } from './middlewares/validator.ts';
 import { promptDeleteSchema, promptGetAllSchema, promptGetSchema, promptPatchSchema, promptPostSchema } from './schemas/prompt.ts';
 import { taxonomyDeleteSchema, taxonomyGetSchema, taxonomyPatchSchema, taxonomyPostSchema } from './schemas/taxonomy.ts';
 import { termDeleteSchema, termGetAllSchema, termGetSchema, termPatchSchema, termPostSchema } from './schemas/term.ts';
-import { userPromptFavoritePostSchema, userPromptFavoriteDeleteSchema } from './schemas/user_prompt_favorite.ts';
+import { userPromptFavoriteDeleteSchema, userPromptFavoritePostSchema } from './schemas/user_prompt_favorite.ts';
 import { userPromptReactionDeleteSchema, userPromptReactionPostSchema } from './schemas/user_prompt_reaction.ts';
 
 const BASE_PATH = '/service';
 
 const app = new Hono();
 
+app.use(
+	'*',
+	cors({
+		origin: '*',
+		allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+		allowHeaders: ['Content-Type', 'Authorization'],
+	}),
+);
+
+app.options('*', (c) => c.text('OK', 200));
+
 // Apply error handler middleware first to catch all errors
-app.use('*', errorHandler);
+app.onError(errorHandler);
 
 // Apply Supabase middleware to all routes
 app.use('*', withSupabase);

@@ -50,9 +50,9 @@ export const promptGetAllSchema = Joi.object({
     isPublic: Joi.boolean().optional(),
     limit: Joi.number().integer().required(),
     offset: Joi.number().integer().required(),
-    order: Joi.string().valid("asc", "desc").required(),
+    order: Joi.string().valid("asc", "desc").optional(),
     searchQuery: Joi.string().optional(),
-    sortBy: Joi.string().required(),
+    sortBy: Joi.string().optional(),
     termIds: Joi.array().items(Joi.string()).optional(),
   }).required(),
 });
