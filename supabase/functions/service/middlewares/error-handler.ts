@@ -8,7 +8,7 @@ import logger from '../utils/logger.ts';
 const log = logger.child('middlewares.error-handler');
 
 export const errorHandler = (err: Error, c: Context): Response => {
-	log.error('Error caught by error handler:', { error: err.message });
+	log.error('Error caught by error handler:', { error: err.message, stack: err.stack });
 
 	if (err instanceof ApiError) {
 		// Handle our custom API errors with structured response
@@ -28,7 +28,6 @@ export const errorHandler = (err: Error, c: Context): Response => {
 		return c.json(errorResponse, err.status);
 	} else if (err instanceof Error) {
 		// Handle generic errors
-		log.error('Unhandled error:', { error: err, stack: err.stack });
 		const errorResponse = createErrorResponse(
 			c,
 			StatusCodes.INTERNAL_SERVER_ERROR,
@@ -37,7 +36,6 @@ export const errorHandler = (err: Error, c: Context): Response => {
 		return c.json(errorResponse, StatusCodes.INTERNAL_SERVER_ERROR);
 	} else {
 		// Handle unknown errors
-		log.error('Unknown error type:', err);
 		const errorResponse = createErrorResponse(
 			c,
 			StatusCodes.INTERNAL_SERVER_ERROR,

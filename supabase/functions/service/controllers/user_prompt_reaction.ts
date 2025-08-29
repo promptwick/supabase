@@ -12,7 +12,8 @@ import { UserPromptReactionDeleteParams, UserPromptReactionPostBody } from '../s
  * @returns A JSON response indicating success with HTTP status 201 (Created).
  */
 export const createUserPromptReaction = async (c: Context) => {
-	const { promptId, reactionType } = await c.req.json<UserPromptReactionPostBody>();
+	const { promptId, reactionType } = c.get('params') as unknown as UserPromptReactionPostBody;
+	const { promptId } = c.get('params') as unknown as UserPromptReactionPostParams;
 	const db = Database.instance;
 
 	const user = c.get('user');
@@ -35,7 +36,7 @@ export const createUserPromptReaction = async (c: Context) => {
  * @returns A JSON response indicating success with HTTP status 200 (OK).
  */
 export const deleteUserPromptReaction = async (c: Context) => {
-	const { promptId } = await c.req.param() as unknown as UserPromptReactionDeleteParams;
+	const { promptId } = c.get('params') as unknown as UserPromptReactionDeleteParams;
 	const db = Database.instance;
 
 	const user = c.get('user');

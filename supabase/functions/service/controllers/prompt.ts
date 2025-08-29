@@ -10,9 +10,7 @@ import PromptTerm from '../models/prompt_term.ts';
 import Term from '../models/term.ts';
 import { PromptDeleteParams, PromptGetAllQuery, PromptGetParams, PromptPatchBody, PromptPatchParams, PromptPostBody } from '../schemas/prompt.ts';
 import { throwApiError } from '../utils/error.ts';
-import logger from '../utils/logger.ts';
 
-const log = logger.child('controllers.prompt');
 /**
  * Retrieves a prompt by its ID from the database and returns it as a JSON response.
  *
@@ -68,20 +66,27 @@ export const getPrompt = async (c: Context) => {
 export const getAllPrompts = async (c: Context) => {
 	const db = Database.instance;
 	const {
-		limit,
-		offset,
+		limit: limitRaw = '20',
+		offset: offsetRaw = '0',
 		order = 'desc',
 		sortBy = 'created_at',
 		termIds,
 		isPublic,
 		searchQuery,
 		isFavorited,
-	} = c.req.query() as unknown as PromptGetAllQuery;
+	} = c.get('query') as unknown as PromptGetAllQuery;
+
+	const limit = Number(limitRaw);
+	const offset = Number(offsetRaw);
 
 	const user = c.get('user');
 
+	console.log(termIds);
+
 	let query = `
-		SELECT p.id, 
+	SELECT 
+		COUNT(*) OVER() AS total_count,
+		p.id, 
 		p.name, 
 		p.prompt, 
 		p.is_public, 
@@ -94,8 +99,8 @@ export const getAllPrompts = async (c: Context) => {
 		p.count_favorite,
 		p.created_at, 
 		p.updated_at,
-		CASE WHEN upf.user_id IS NOT NULL THEN true ELSE false END AS is_favorited,
-		upr.reaction_type AS reaction_type,
+		CASE WHEN MIN(upf.user_id::TEXT) IS NOT NULL THEN true ELSE false END AS is_favorited,
+		MIN(upr.reaction_type) AS reaction_type,
 		JSON_AGG(JSON_BUILD_OBJECT(
 			'id', terms.id,
 			'name', terms.name,
@@ -130,7 +135,14 @@ export const getAllPrompts = async (c: Context) => {
 	}
 
 	if (termIds && termIds.length > 0) {
-		query = `${query} AND terms.id IN ($TERM_IDS)`;
+		// Filter prompts that have ALL the specified termIds
+		query = `${query} AND p.id IN (
+			SELECT prompt_id
+			FROM prompt_terms
+			WHERE term_id = ANY($TERM_IDS)
+			GROUP BY prompt_id
+			HAVING COUNT(DISTINCT term_id) = ${termIds.length}
+		)`;
 		params.term_ids = termIds;
 	}
 
@@ -140,21 +152,43 @@ export const getAllPrompts = async (c: Context) => {
 	}
 
 	if (isFavorited) {
-		query = `${query} AND ufp.user_id IS NOT NULL`;
+		query = `${query} AND upf.user_id IS NOT NULL`;
 	}
 
 	query = `${query}
-	GROUP BY p.id, upf.user_id, upr.reaction_type
+	GROUP BY p.id
 	ORDER BY p.${sortBy} ${order}
 	LIMIT $LIMIT
 	OFFSET $OFFSET
   `;
 
-	const prompts = await db.query<Prompt & { is_favorited: boolean; terms: Array<Term> }>(query, params);
+	const prompts = await db.query<Prompt & { isFavorited: boolean; terms: Array<Term>; totalCount: number }>(query, params);
 
-	log.debug(`Retrieved ${prompts.length} prompts from database`);
+	if (prompts.length === 0) {
+		return c.json({
+			count: 0,
+			data: [],
+		}, StatusCodes.OK);
+	}
 
-	return c.json(prompts, StatusCodes.OK);
+	const totalCount = Number(prompts[0].totalCount);
+
+	// Post-process prompts
+	const processedPrompts = prompts.map(prompt => {
+		const { totalCount: _totalCount, ...rest } = prompt;
+		const terms = prompt.terms.filter(term => !!term.id);
+		return {
+			...rest,
+			terms,
+		};
+	});
+
+	return c.json({
+		count: totalCount,
+		data: processedPrompts,
+		prevOffset: offset > 0 ? Math.max(0, offset - limit) : undefined,
+		nextOffset: prompts.length > 0 && (offset + limit) < totalCount ? offset + limit : undefined,
+	}, StatusCodes.OK);
 };
 
 /**

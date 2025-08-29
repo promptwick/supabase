@@ -9,6 +9,7 @@ export default class BaseEntity {
   static defaultFields: string[] = [];
 
   toJSON() {
+    console.log(this);
     return instanceToPlain(this) as Record<string, unknown>;
   }
 

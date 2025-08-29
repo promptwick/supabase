@@ -9,7 +9,7 @@ export interface UserPromptFavoriteDeleteParams {
 }
 
 export const userPromptFavoritePostSchema = Joi.object({
-  body: Joi.object({
+  params: Joi.object({
     promptId: Joi.string().required(),
   }).required(),
 });

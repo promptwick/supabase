@@ -53,7 +53,7 @@ export const getTerm = async (c: Context) => {
  * @returns A JSON response containing an array of all terms and a 200 OK status.
  */
 export const getAllTerms = async (c: Context) => {
-	const { taxonomyIds, localeId, parentTermId, includeChildren } = c.req.query() as unknown as TermGetAllQuery;
+	const { taxonomyId, localeId, parentTermId, includeChildren } = c.req.query() as unknown as TermGetAllQuery;
 
 	const db = Database.instance;
 
@@ -71,9 +71,9 @@ export const getAllTerms = async (c: Context) => {
 	`;
 	const params: QueryArguments = {};
 
-	if (taxonomyIds && taxonomyIds.length > 0) {
-		query += ` AND taxonomy_id = ANY($TAXONOMY_IDS)`;
-		params.taxonomy_ids = taxonomyIds;
+	if (taxonomyId) {
+		query += ` AND taxonomy_id = $TAXONOMY_ID`;
+		params.taxonomy_id = taxonomyId;
 	}
 	if (localeId) {
 		query += ` AND locale_id = $LOCALE_ID`;
@@ -89,6 +89,7 @@ export const getAllTerms = async (c: Context) => {
 
 	const terms = await db.query<Term>(query, params);
 
+	let response = terms;
 	if (includeChildren) {
 		// Sort the responses such that the children are assigned inside the "children" attribute in parent
 		const termsMap = new Map<string, Term>();
@@ -97,14 +98,17 @@ export const getAllTerms = async (c: Context) => {
 			if (term.parentTermId) {
 				const parent = termsMap.get(term.parentTermId);
 				if (parent) {
-					parent.children!.push(termsMap.get(term.id)!);
+					if (!parent.children) {
+						parent.children = [];
+					}
+					parent.children.push(termsMap.get(term.id)!);
 				}
 			}
 		});
-		return c.json(Array.from(termsMap.values()).filter((term) => !term.parentTermId), StatusCodes.OK);
+		response = Array.from(termsMap.values()).filter((term) => !term.parentTermId);
 	}
 
-	return c.json(terms, StatusCodes.OK);
+	return c.json({ data: response }, StatusCodes.OK);
 };
 
 /**

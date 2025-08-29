@@ -190,14 +190,14 @@ export default class Database {
 		log.debug(`Executing query: ${query} with values %o`, { values });
 
 		if (transaction !== null) {
-			const { rows } = await transaction.queryObject<T>(query, values);
+			const { rows } = await transaction.queryObject<T>({ camelCase: true, text: query, args: values });
 			return rows;
 		}
 
 		let conn;
 		try {
 			conn = await this.pool.connect();
-			const { rows } = await conn.queryObject<T>(query, values);
+			const { rows } = await conn.queryObject<T>({ camelCase: true, text: query, args: values });
 
 			return rows;
 		} catch (error) {

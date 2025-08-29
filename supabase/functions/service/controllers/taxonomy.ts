@@ -48,8 +48,7 @@ export const getTaxonomy = async (c: Context): Promise<Response> => {
 export const getAllTaxonomies = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 
-	const taxonomies = await db.query<Taxonomy>(
-		`
+	const query = `
 		SELECT
 		  id,
 		  name,
@@ -60,9 +59,10 @@ export const getAllTaxonomies = async (c: Context): Promise<Response> => {
 		  updated_at
 		FROM taxonomies
 		WHERE deleted_at IS NULL
-		`,
-	);
-	return c.json(taxonomies, StatusCodes.OK);
+	`;
+
+	const taxonomies = await db.query<Taxonomy>(query);
+	return c.json({ data: taxonomies }, StatusCodes.OK);
 };
 
 /**

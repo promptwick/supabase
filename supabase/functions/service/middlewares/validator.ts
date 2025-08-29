@@ -7,6 +7,14 @@ import logger from '../utils/logger.ts';
 
 const log = logger.child('middlewares/validator');
 
+declare module 'jsr:@hono/hono' {
+	interface ContextVariableMap {
+		query: Record<string, string | string[]>;
+		body: unknown;
+		params: Record<string, string>;
+	}
+}
+
 /**
  * Middleware factory that validates the incoming request using the provided schema.
  *
@@ -20,7 +28,16 @@ const log = logger.child('middlewares/validator');
  */
 export const withValidation = (schema: Schema) => async (c: Context, next: Next): Promise<void> => {
 	const params = c.req.param();
-	const query = c.req.query();
+	const query: Record<string, string | string[]> = c.req.query();
+	const queries = c.req.queries();
+
+	for (const key in queries) {
+		if (key.endsWith('[]')) {
+			query[key.slice(0, -2)] = queries[key];
+			delete query[key];
+		}
+	}
+
 	const body = await (async () => {
 		const text = await c.req.text();
 		return text ? JSON.parse(text) : null;
@@ -39,6 +56,9 @@ export const withValidation = (schema: Schema) => async (c: Context, next: Next)
 			message: errorMessage,
 		});
 	} else {
+		c.set('params', params);
+		c.set('query', query);
+		c.set('body', body);
 		await next();
 	}
 };
