@@ -3,7 +3,7 @@ import { StatusCodes } from 'npm:http-status-codes';
 import { v7 as uuid } from 'npm:uuid';
 import Database from '../models/database.ts';
 import Taxonomy from '../models/taxonomy.ts';
-import { TaxonomyGetParams, TaxonomyPatchBody, TaxonomyPostBody } from '../schemas/taxonomy.ts';
+import { TaxonomyGetParams, TaxonomyPatchBody, CreateTaxonomyBody } from '../schemas/taxonomy.ts';
 import { throwApiError } from '../utils/error.ts';
 
 /**
@@ -72,7 +72,7 @@ export const getAllTaxonomies = async (c: Context): Promise<Response> => {
  */
 export const createTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
-	const { name } = await c.req.json<TaxonomyPostBody>();
+	const { name } = await c.req.json<CreateTaxonomyBody>();
 
 	const newTaxonomy = new Taxonomy();
 	newTaxonomy.id = uuid();

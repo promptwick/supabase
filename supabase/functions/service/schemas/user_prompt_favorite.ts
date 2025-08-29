@@ -1,6 +1,6 @@
 import Joi from 'npm:joi';
 
-export interface UserPromptFavoritePostBody {
+export interface CreateUserPromptFavoriteBody {
   promptId: string;
 }
 
@@ -8,7 +8,7 @@ export interface UserPromptFavoriteDeleteParams {
   promptId: string;
 }
 
-export const userPromptFavoritePostSchema = Joi.object({
+export const createUserPromptFavoriteSchema = Joi.object({
   params: Joi.object({
     promptId: Joi.string().required(),
   }).required(),

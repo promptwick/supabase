@@ -2,10 +2,10 @@ import Joi from 'npm:joi';
 
 export type UserPromptReactionType = 'up' | 'down';
 
-export type UserPromptReactionPostParams = {
+export type CreateUserPromptReactionParams = {
 	promptId: string;
 };
-export type UserPromptReactionPostBody = {
+export type CreateUserPromptReactionBody = {
 	reactionType: UserPromptReactionType;
 };
 
@@ -13,7 +13,7 @@ export interface UserPromptReactionDeleteParams {
 	promptId: string;
 }
 
-export const userPromptReactionPostSchema = Joi.object({
+export const createUserPromptReactionSchema = Joi.object({
 	params: Joi.object({
 		promptId: Joi.string().required(),
 	}).required(),

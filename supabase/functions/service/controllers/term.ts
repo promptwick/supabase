@@ -5,7 +5,7 @@ import { v7 as uuid } from 'npm:uuid';
 
 import Term from '../models/term.ts';
 import Database from '../models/database.ts';
-import { TermDeleteParams, TermGetAllQuery, TermGetParams, TermPatchBody, TermPatchParams, TermPostBody } from '../schemas/term.ts';
+import { TermDeleteParams, TermGetAllQuery, TermGetParams, TermPatchBody, TermPatchParams, CreateTermBody } from '../schemas/term.ts';
 import { throwApiError } from '../utils/error.ts';
 import { QueryArguments } from 'jsr:@db/postgres';
 
@@ -118,7 +118,7 @@ export const getAllTerms = async (c: Context) => {
  * @returns A JSON response containing the created term and a 201 Created status.
  */
 export const createTerm = async (c: Context) => {
-	const { name, taxonomyId } = await c.req.json<TermPostBody>();
+	const { name, taxonomyId } = await c.req.json<CreateTermBody>();
 
 	const db = Database.instance;
 

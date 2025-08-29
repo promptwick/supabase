@@ -15,7 +15,7 @@ export type PromptGetAllQuery = {
   termIds?: string[];
 }
 
-export type PromptPostBody = {
+export type CreatePromptBody = {
   isPublic: boolean;
   localeId: string;
   name: string;
@@ -57,7 +57,7 @@ export const promptGetAllSchema = Joi.object({
   }).required(),
 });
 
-export const promptPostSchema = Joi.object({
+export const createPromptSchema = Joi.object({
   body: Joi.object({
     isPublic: Joi.boolean().required(),
     name: Joi.string().required(),

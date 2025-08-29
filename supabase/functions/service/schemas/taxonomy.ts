@@ -4,7 +4,7 @@ export type TaxonomyGetParams = {
 	taxonomyId: string;
 };
 
-export type TaxonomyPostBody = {
+export type CreateTaxonomyBody = {
 	name: string;
 };
 
@@ -26,7 +26,7 @@ export const taxonomyGetSchema = Joi.object({
 	}).required(),
 });
 
-export const taxonomyPostSchema = Joi.object({
+export const createTaxonomySchema = Joi.object({
 	body: Joi.object({
 		name: Joi.string().required(),
 	}).required(),

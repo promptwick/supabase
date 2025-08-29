@@ -11,7 +11,7 @@ export interface TermGetAllQuery {
 	localeId?: string;
 }
 
-export interface TermPostBody {
+export interface CreateTermBody {
 	name: string;
 	taxonomyId: string;
 }
@@ -43,7 +43,7 @@ export const termGetAllSchema = Joi.object({
 	}).required(),
 });
 
-export const termPostSchema = Joi.object({
+export const createTermSchema = Joi.object({
 	body: Joi.object({
 		name: Joi.string().required(),
 		taxonomyId: Joi.string().required(),

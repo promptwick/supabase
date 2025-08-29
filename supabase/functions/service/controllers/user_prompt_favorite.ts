@@ -1,7 +1,7 @@
 import { StatusCodes } from 'npm:http-status-codes';
 import Database from '../models/database.ts';
 import UserPromptFavorite from '../models/user_prompt_favorite.ts';
-import { UserPromptFavoriteDeleteParams, UserPromptFavoritePostBody } from '../schemas/user_prompt_favorite.ts';
+import { UserPromptFavoriteDeleteParams, CreateUserPromptFavoriteBody } from '../schemas/user_prompt_favorite.ts';
 import { Context } from 'jsr:@hono/hono';
 import { throwApiError } from '../utils/error.ts';
 

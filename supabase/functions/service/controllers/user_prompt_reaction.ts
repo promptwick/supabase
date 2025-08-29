@@ -3,7 +3,7 @@ import { Context } from 'jsr:@hono/hono';
 import { StatusCodes } from 'npm:http-status-codes';
 import Database from '../models/database.ts';
 import UserPromptReaction from '../models/user_prompt_reaction.ts';
-import { UserPromptReactionDeleteParams, UserPromptReactionPostBody } from '../schemas/user_prompt_reaction.ts';
+import { UserPromptReactionDeleteParams, CreateUserPromptReactionParams, CreateUserPromptReactionBody } from '../schemas/user_prompt_reaction.ts';
 
 /**
  * Handles the creation of a user prompt reaction.
@@ -12,8 +12,8 @@ import { UserPromptReactionDeleteParams, UserPromptReactionPostBody } from '../s
  * @returns A JSON response indicating success with HTTP status 201 (Created).
  */
 export const createUserPromptReaction = async (c: Context) => {
-	const { promptId, reactionType } = c.get('params') as unknown as UserPromptReactionPostBody;
-	const { promptId } = c.get('params') as unknown as UserPromptReactionPostParams;
+	const { promptId } = c.get('params') as unknown as CreateUserPromptReactionParams;
+	const { reactionType } = await c.req.json<CreateUserPromptReactionBody>();
 	const db = Database.instance;
 
 	const user = c.get('user');
