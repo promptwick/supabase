@@ -3,7 +3,7 @@ import { StatusCodes } from 'npm:http-status-codes';
 import { v7 as uuid } from 'npm:uuid';
 import Database from '../models/database.ts';
 import Taxonomy from '../models/taxonomy.ts';
-import { TaxonomyGetParams, TaxonomyPatchBody, CreateTaxonomyBody } from '../schemas/taxonomy.ts';
+import { GetTaxonomyParams, UpdateTaxonomyBody, CreateTaxonomyBody } from '../schemas/taxonomy.ts';
 import { throwApiError } from '../utils/error.ts';
 
 /**
@@ -13,7 +13,7 @@ import { throwApiError } from '../utils/error.ts';
  */
 export const getTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
-	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
+	const { taxonomyId } = c.get('params') as GetTaxonomyParams;
 
 	const taxonomy = await db.queryOne<Taxonomy>(
 		`
@@ -72,7 +72,7 @@ export const getAllTaxonomies = async (c: Context): Promise<Response> => {
  */
 export const createTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
-	const { name } = await c.req.json<CreateTaxonomyBody>();
+	const { name } = c.get('body') as CreateTaxonomyBody;
 
 	const newTaxonomy = new Taxonomy();
 	newTaxonomy.id = uuid();
@@ -91,8 +91,8 @@ export const createTaxonomy = async (c: Context): Promise<Response> => {
  */
 export const patchTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
-	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
-	const { name } = await c.req.json<TaxonomyPatchBody>();
+	const { taxonomyId } = c.get('params') as GetTaxonomyParams;
+	const { name } = c.get('body') as UpdateTaxonomyBody;
 
 	const existingTaxonomy = await db.queryOne<Taxonomy>(
 		`
@@ -132,7 +132,7 @@ export const patchTaxonomy = async (c: Context): Promise<Response> => {
 
 export const deleteTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
-	const { taxonomyId } = c.req.param() as unknown as TaxonomyGetParams;
+	const { taxonomyId } = c.get('params') as GetTaxonomyParams;
 
 	const existingTaxonomy = await db.queryOne<Taxonomy>(
 		`

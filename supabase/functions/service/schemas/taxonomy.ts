@@ -1,6 +1,6 @@
 import Joi from 'npm:joi';
 
-export type TaxonomyGetParams = {
+export type GetTaxonomyParams = {
 	taxonomyId: string;
 };
 
@@ -8,19 +8,19 @@ export type CreateTaxonomyBody = {
 	name: string;
 };
 
-export type TaxonomyPatchBody = {
+export type UpdateTaxonomyBody = {
 	name: string;
 };
 
-export type TaxonomyPatchParams = {
+export type UpdateTaxonomyParams = {
 	taxonomyId: string;
 };
 
-export type TaxonomyDeleteParams = {
+export type DeleteTaxonomyParams = {
 	taxonomyId: string;
 };
 
-export const taxonomyGetSchema = Joi.object({
+export const getTaxonomySchema = Joi.object({
 	params: Joi.object({
 		taxonomyId: Joi.string().pattern(/^[0-9]+$/).required(),
 	}).required(),
@@ -32,7 +32,7 @@ export const createTaxonomySchema = Joi.object({
 	}).required(),
 });
 
-export const taxonomyPatchSchema = Joi.object({
+export const updateTaxonomySchema = Joi.object({
 	body: Joi.object({
 		name: Joi.string().required(),
 	}).required(),
@@ -41,7 +41,7 @@ export const taxonomyPatchSchema = Joi.object({
 	}).required(),
 });
 
-export const taxonomyDeleteSchema = Joi.object({
+export const deleteTaxonomySchema = Joi.object({
 	params: Joi.object({
 		taxonomyId: Joi.string().pattern(/^[0-9]+$/).required(),
 	}).required(),

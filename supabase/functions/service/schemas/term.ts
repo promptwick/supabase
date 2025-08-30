@@ -1,10 +1,10 @@
 import Joi from 'npm:joi';
 
-export interface TermGetParams {
+export interface GetTermParams {
 	termId: string;
 }
 
-export interface TermGetAllQuery {
+export interface GetAllTermsQuery {
 	parentTermId?: string;
 	includeChildren?: boolean;
 	taxonomyId?: string;
@@ -16,25 +16,25 @@ export interface CreateTermBody {
 	taxonomyId: string;
 }
 
-export interface TermPatchBody {
+export interface UpdateTermBody {
 	name?: string;
 }
 
-export interface TermPatchParams {
+export interface UpdateTermParams {
 	termId: string;
 }
 
-export interface TermDeleteParams {
+export interface DeleteTermParams {
 	termId: string;
 }
 
-export const termGetSchema = Joi.object({
+export const getTermSchema = Joi.object({
 	params: Joi.object({
 		termId: Joi.string().required(),
 	}).required(),
 });
 
-export const termGetAllSchema = Joi.object({
+export const getAllTermsSchema = Joi.object({
 	query: Joi.object({
 		taxonomyId: Joi.string().optional(),
 		localeId: Joi.string().optional(),
@@ -50,7 +50,7 @@ export const createTermSchema = Joi.object({
 	}).required(),
 });
 
-export const termPatchSchema = Joi.object({
+export const updateTermSchema = Joi.object({
 	params: Joi.object({
 		termId: Joi.string().required(),
 	}).required(),
@@ -59,7 +59,7 @@ export const termPatchSchema = Joi.object({
 	}).required(),
 });
 
-export const termDeleteSchema = Joi.object({
+export const deleteTermSchema = Joi.object({
 	params: Joi.object({
 		termId: Joi.string().required(),
 	}).required(),

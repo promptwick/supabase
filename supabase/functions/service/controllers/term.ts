@@ -5,7 +5,7 @@ import { v7 as uuid } from 'npm:uuid';
 
 import Term from '../models/term.ts';
 import Database from '../models/database.ts';
-import { TermDeleteParams, TermGetAllQuery, TermGetParams, TermPatchBody, TermPatchParams, CreateTermBody } from '../schemas/term.ts';
+import { DeleteTermParams, GetAllTermsQuery, GetTermParams, UpdateTermBody, UpdateTermParams, CreateTermBody } from '../schemas/term.ts';
 import { throwApiError } from '../utils/error.ts';
 import { QueryArguments } from 'jsr:@db/postgres';
 
@@ -17,7 +17,7 @@ import { QueryArguments } from 'jsr:@db/postgres';
  * @throws {ApiError} If the term with the specified ID does not exist.
  */
 export const getTerm = async (c: Context) => {
-	const { termId } = c.req.param() as unknown as TermGetParams;
+	const { termId } = c.get('params') as unknown as GetTermParams;
 
 	const db = Database.instance;
 
@@ -53,7 +53,7 @@ export const getTerm = async (c: Context) => {
  * @returns A JSON response containing an array of all terms and a 200 OK status.
  */
 export const getAllTerms = async (c: Context) => {
-	const { taxonomyId, localeId, parentTermId, includeChildren } = c.req.query() as unknown as TermGetAllQuery;
+	const { taxonomyId, localeId, parentTermId, includeChildren } = c.get('query') as GetAllTermsQuery;
 
 	const db = Database.instance;
 
@@ -118,7 +118,7 @@ export const getAllTerms = async (c: Context) => {
  * @returns A JSON response containing the created term and a 201 Created status.
  */
 export const createTerm = async (c: Context) => {
-	const { name, taxonomyId } = await c.req.json<CreateTermBody>();
+	const { name, taxonomyId } = c.get('body') as CreateTermBody;
 
 	const db = Database.instance;
 
@@ -142,8 +142,8 @@ export const createTerm = async (c: Context) => {
  * @throws {ApiError} If the term does not exist.
  */
 export const patchTerm = async (c: Context) => {
-	const { termId } = c.req.param() as unknown as TermPatchParams;
-	const { name } = await c.req.json<TermPatchBody>();
+	const { termId } = c.get('params') as unknown as UpdateTermParams;
+	const { name } = c.get('body') as UpdateTermBody;
 
 	const db = Database.instance;
 
@@ -186,7 +186,7 @@ export const patchTerm = async (c: Context) => {
  * @throws {ApiError} If the term does not exist.
  */
 export const deleteTerm = async (c: Context) => {
-	const { termId } = c.req.param() as unknown as TermDeleteParams;
+	const { termId } = c.get('params') as unknown as DeleteTermParams;
 
 	const db = Database.instance;
 

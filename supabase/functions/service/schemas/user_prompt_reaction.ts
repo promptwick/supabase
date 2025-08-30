@@ -9,7 +9,7 @@ export type CreateUserPromptReactionBody = {
 	reactionType: UserPromptReactionType;
 };
 
-export interface UserPromptReactionDeleteParams {
+export interface DeleteUserPromptReactionParams {
 	promptId: string;
 }
 
@@ -22,7 +22,7 @@ export const createUserPromptReactionSchema = Joi.object({
 	}).required(),
 });
 
-export const userPromptReactionDeleteSchema = Joi.object({
+export const deleteUserPromptReactionSchema = Joi.object({
 	params: Joi.object({
 		promptId: Joi.string().required(),
 	}).required(),

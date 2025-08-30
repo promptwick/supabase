@@ -1,7 +1,7 @@
 import { StatusCodes } from 'npm:http-status-codes';
 import Database from '../models/database.ts';
 import UserPromptFavorite from '../models/user_prompt_favorite.ts';
-import { UserPromptFavoriteDeleteParams, CreateUserPromptFavoriteBody } from '../schemas/user_prompt_favorite.ts';
+import { DeleteUserPromptFavoriteParams, CreateUserPromptFavoriteBody } from '../schemas/user_prompt_favorite.ts';
 import { Context } from 'jsr:@hono/hono';
 import { throwApiError } from '../utils/error.ts';
 
@@ -17,7 +17,7 @@ import { throwApiError } from '../utils/error.ts';
  * @throws {ApiError} If the user has already favorited the prompt (HTTP 409 Conflict) or on other database errors.
  */
 export const createUserPromptFavorite = async (c: Context) => {
-	const { promptId } = c.get('params') as unknown as UserPromptFavorite
+	const { promptId } = c.get('params') as unknown as CreateUserPromptFavoriteBody;
 
 	const user = c.get('user');
 
@@ -57,7 +57,7 @@ export const createUserPromptFavorite = async (c: Context) => {
  * @returns A response with HTTP status 204 (No Content) on successful deletion.
  */
 export const deleteUserPromptFavorite = async (c: Context) => {
-	const { promptId } = c.get('params') as unknown as UserPromptFavoriteDeleteParams;
+	const { promptId } = c.get('params') as unknown as DeleteUserPromptFavoriteParams;
 
 	const user = c.get('user');
 

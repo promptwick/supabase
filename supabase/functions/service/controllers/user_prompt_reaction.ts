@@ -3,7 +3,7 @@ import { Context } from 'jsr:@hono/hono';
 import { StatusCodes } from 'npm:http-status-codes';
 import Database from '../models/database.ts';
 import UserPromptReaction from '../models/user_prompt_reaction.ts';
-import { UserPromptReactionDeleteParams, CreateUserPromptReactionParams, CreateUserPromptReactionBody } from '../schemas/user_prompt_reaction.ts';
+import { DeleteUserPromptReactionParams, CreateUserPromptReactionParams, CreateUserPromptReactionBody } from '../schemas/user_prompt_reaction.ts';
 
 /**
  * Handles the creation of a user prompt reaction.
@@ -13,7 +13,7 @@ import { UserPromptReactionDeleteParams, CreateUserPromptReactionParams, CreateU
  */
 export const createUserPromptReaction = async (c: Context) => {
 	const { promptId } = c.get('params') as unknown as CreateUserPromptReactionParams;
-	const { reactionType } = await c.req.json<CreateUserPromptReactionBody>();
+	const { reactionType } = c.get('body') as CreateUserPromptReactionBody;
 	const db = Database.instance;
 
 	const user = c.get('user');
@@ -36,7 +36,7 @@ export const createUserPromptReaction = async (c: Context) => {
  * @returns A JSON response indicating success with HTTP status 200 (OK).
  */
 export const deleteUserPromptReaction = async (c: Context) => {
-	const { promptId } = c.get('params') as unknown as UserPromptReactionDeleteParams;
+	const { promptId } = c.get('params') as unknown as DeleteUserPromptReactionParams;
 	const db = Database.instance;
 
 	const user = c.get('user');

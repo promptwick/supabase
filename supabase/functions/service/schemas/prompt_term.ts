@@ -5,7 +5,7 @@ export interface CreatePromptTermBody {
 	termId: string;
 }
 
-export interface PromptTermDeleteParams {
+export interface DeletePromptTermParams {
 	id: string;
 }
 
@@ -16,7 +16,7 @@ export const createPromptTermSchema = Joi.object({
 	}).required(),
 });
 
-export const promptTermDeleteSchema = Joi.object({
+export const deletePromptTermSchema = Joi.object({
 	params: Joi.object({
 		id: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(),
 	}).required(),

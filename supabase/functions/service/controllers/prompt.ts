@@ -8,7 +8,7 @@ import Database from '../models/database.ts';
 import Prompt from '../models/prompt.ts';
 import PromptTerm from '../models/prompt_term.ts';
 import Term from '../models/term.ts';
-import { PromptDeleteParams, PromptGetAllQuery, PromptGetParams, PromptPatchBody, PromptPatchParams, CreatePromptBody } from '../schemas/prompt.ts';
+import { CreatePromptBody, DeletePromptParams, GetAllPromptsQuery, GetPromptParams, UpdatePromptBody, UpdatePromptParams } from '../schemas/prompt.ts';
 import { throwApiError } from '../utils/error.ts';
 
 /**
@@ -20,12 +20,31 @@ import { throwApiError } from '../utils/error.ts';
  */
 
 export const getPrompt = async (c: Context) => {
-	const { promptId } = c.req.param() as unknown as PromptGetParams;
+	const { promptId } = c.get('params') as GetPromptParams;
 
 	const db = Database.instance;
-
 	const prompt = await db.queryOne<Prompt>(
-		`SELECT id, name, prompt, is_public, is_latest_version, parent_prompt_id, version, locale_id, count_reaction_up, count_reaction_down, count_favorite, created_at, updated_at, created_by, updated_by FROM prompts WHERE id = $1 AND deleted_at IS NULL`,
+		`
+		SELECT 
+			id, 
+			name, 
+			prompt, 
+			is_public, 
+			is_latest_version, 
+			parent_prompt_id, 
+			version, 
+			locale_id, 
+			count_reaction_up, 
+			count_reaction_down, 
+			count_favorite, 
+			created_at, 
+			updated_at, 
+			created_by, 
+			updated_by 
+		FROM prompts 
+		WHERE id = $1 
+			AND deleted_at IS NULL
+		`,
 		[promptId],
 	);
 	if (!prompt) {
@@ -74,7 +93,7 @@ export const getAllPrompts = async (c: Context) => {
 		isPublic,
 		searchQuery,
 		isFavorited,
-	} = c.get('query') as unknown as PromptGetAllQuery;
+	} = c.get('query') as unknown as GetAllPromptsQuery;
 
 	const limit = Number(limitRaw);
 	const offset = Number(offsetRaw);
@@ -135,14 +154,7 @@ export const getAllPrompts = async (c: Context) => {
 	}
 
 	if (termIds && termIds.length > 0) {
-		// Filter prompts that have ALL the specified termIds
-		query = `${query} AND p.id IN (
-			SELECT prompt_id
-			FROM prompt_terms
-			WHERE term_id = ANY($TERM_IDS)
-			GROUP BY prompt_id
-			HAVING COUNT(DISTINCT term_id) = ${termIds.length}
-		)`;
+		query = `${query} AND terms.id IN ($TERM_IDS)`;
 		params.term_ids = termIds;
 	}
 
@@ -174,9 +186,9 @@ export const getAllPrompts = async (c: Context) => {
 	const totalCount = Number(prompts[0].totalCount);
 
 	// Post-process prompts
-	const processedPrompts = prompts.map(prompt => {
+	const processedPrompts = prompts.map((prompt) => {
 		const { totalCount: _totalCount, ...rest } = prompt;
-		const terms = prompt.terms.filter(term => !!term.id);
+		const terms = prompt.terms.filter((term) => !!term.id);
 		return {
 			...rest,
 			terms,
@@ -206,7 +218,7 @@ export const getAllPrompts = async (c: Context) => {
  * @throws {ApiError} If the parent prompt or any term references are invalid.
  */
 export const createPrompt = async (c: Context) => {
-	const { prompt, isPublic, name, parentPromptId, localeId, termIds } = await c.req.json<CreatePromptBody>();
+	const { prompt, isPublic, name, parentPromptId, localeId, termIds } = c.get('body') as CreatePromptBody;
 
 	const user = c.get('user');
 
@@ -294,8 +306,8 @@ export const createPrompt = async (c: Context) => {
  */
 
 export const patchPrompt = async (c: Context) => {
-	const { promptId } = c.req.param() as unknown as PromptPatchParams;
-	const { name, prompt, termIds } = await c.req.json<PromptPatchBody>();
+	const { promptId } = c.get('params') as UpdatePromptParams;
+	const { name, prompt, termIds } = c.get('body') as UpdatePromptBody;
 
 	const user = c.get('user');
 
@@ -391,7 +403,7 @@ export const patchPrompt = async (c: Context) => {
  * @throws {ApiError} If the prompt does not exist.
  */
 export const deletePrompt = async (c: Context) => {
-	const { promptId } = c.req.param() as unknown as PromptDeleteParams;
+	const { promptId } = c.get('params') as DeletePromptParams;
 
 	const db = Database.instance;
 
