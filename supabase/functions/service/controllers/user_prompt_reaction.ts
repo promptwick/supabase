@@ -3,7 +3,8 @@ import { Context } from 'jsr:@hono/hono';
 import { StatusCodes } from 'npm:http-status-codes';
 import Database from '../models/database.ts';
 import UserPromptReaction from '../models/user_prompt_reaction.ts';
-import { DeleteUserPromptReactionParams, CreateUserPromptReactionParams, CreateUserPromptReactionBody } from '../schemas/user_prompt_reaction.ts';
+import { CreateUserPromptReactionBody, CreateUserPromptReactionParams, DeleteUserPromptReactionParams } from '../schemas/user_prompt_reaction.ts';
+import { throwApiError } from '../utils/error.ts';
 
 /**
  * Handles the creation of a user prompt reaction.
@@ -26,7 +27,7 @@ export const createUserPromptReaction = async (c: Context) => {
 
 	await db.insert('user_prompt_reactions', reaction);
 
-	return c.json({ success: true }, StatusCodes.CREATED);
+	return c.body(null, StatusCodes.CREATED);
 };
 
 /**
@@ -41,10 +42,31 @@ export const deleteUserPromptReaction = async (c: Context) => {
 
 	const user = c.get('user');
 
-	await db.query(
+	const existingUserPromptReaction = await db.queryOne<UserPromptReaction>(
+		UserPromptReaction,
+		`
+			SELECT
+				user_id,
+				prompt_id,
+				reaction_type,
+				created_at
+			FROM user_prompt_reactions
+			WHERE user_id = $1
+				AND prompt_id = $2
+		`,
+		[user.id, promptId],
+	);
+	if (!existingUserPromptReaction) {
+		throwApiError(
+			StatusCodes.NOT_FOUND,
+			'Cannot remove reaction: User reaction prompt not found',
+		);
+	}
+
+	await db.queryRaw(
 		`DELETE FROM user_prompt_reactions WHERE user_id = $1 AND prompt_id = $2`,
 		[user.id, promptId],
 	);
 
-	return c.json({ success: true }, StatusCodes.OK);
+	return c.body(null, StatusCodes.NO_CONTENT);
 };

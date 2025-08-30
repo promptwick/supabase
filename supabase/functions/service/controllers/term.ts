@@ -5,7 +5,7 @@ import { v7 as uuid } from 'npm:uuid';
 
 import Term from '../models/term.ts';
 import Database from '../models/database.ts';
-import { DeleteTermParams, GetAllTermsQuery, GetTermParams, UpdateTermBody, UpdateTermParams, CreateTermBody } from '../schemas/term.ts';
+import { CreateTermBody, DeleteTermParams, GetAllTermsQuery, GetTermParams, UpdateTermBody, UpdateTermParams } from '../schemas/term.ts';
 import { throwApiError } from '../utils/error.ts';
 import { QueryArguments } from 'jsr:@db/postgres';
 
@@ -22,6 +22,7 @@ export const getTerm = async (c: Context) => {
 	const db = Database.instance;
 
 	const term = await db.queryOne<Term>(
+		Term,
 		`
 		SELECT
 		  id,
@@ -87,7 +88,7 @@ export const getAllTerms = async (c: Context) => {
 		query += ` AND parent_term_id IS NULL`;
 	}
 
-	const terms = await db.query<Term>(query, params);
+	const terms = await db.query<Term>(Term, query, params);
 
 	let response = terms;
 	if (includeChildren) {
@@ -148,6 +149,7 @@ export const patchTerm = async (c: Context) => {
 	const db = Database.instance;
 
 	const existingTerm = await db.queryOne<Term>(
+		Term,
 		`
 		SELECT
 		  id,
@@ -191,6 +193,7 @@ export const deleteTerm = async (c: Context) => {
 	const db = Database.instance;
 
 	const existingTerm = await db.queryOne<Term>(
+		Term,
 		`
 		SELECT
 		  id,

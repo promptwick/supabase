@@ -3,7 +3,7 @@ import { StatusCodes } from 'npm:http-status-codes';
 import { v7 as uuid } from 'npm:uuid';
 import Database from '../models/database.ts';
 import Taxonomy from '../models/taxonomy.ts';
-import { GetTaxonomyParams, UpdateTaxonomyBody, CreateTaxonomyBody } from '../schemas/taxonomy.ts';
+import { CreateTaxonomyBody, GetTaxonomyParams, UpdateTaxonomyBody } from '../schemas/taxonomy.ts';
 import { throwApiError } from '../utils/error.ts';
 
 /**
@@ -16,6 +16,7 @@ export const getTaxonomy = async (c: Context): Promise<Response> => {
 	const { taxonomyId } = c.get('params') as GetTaxonomyParams;
 
 	const taxonomy = await db.queryOne<Taxonomy>(
+		Taxonomy,
 		`
 		SELECT
 		  id,
@@ -61,7 +62,7 @@ export const getAllTaxonomies = async (c: Context): Promise<Response> => {
 		WHERE deleted_at IS NULL
 	`;
 
-	const taxonomies = await db.query<Taxonomy>(query);
+	const taxonomies = await db.query<Taxonomy>(Taxonomy, query);
 	return c.json({ data: taxonomies }, StatusCodes.OK);
 };
 
@@ -95,6 +96,7 @@ export const patchTaxonomy = async (c: Context): Promise<Response> => {
 	const { name } = c.get('body') as UpdateTaxonomyBody;
 
 	const existingTaxonomy = await db.queryOne<Taxonomy>(
+		Taxonomy,
 		`
 		SELECT
 		  id,
@@ -135,6 +137,7 @@ export const deleteTaxonomy = async (c: Context): Promise<Response> => {
 	const { taxonomyId } = c.get('params') as GetTaxonomyParams;
 
 	const existingTaxonomy = await db.queryOne<Taxonomy>(
+		Taxonomy,
 		`
 		SELECT
 		  id,

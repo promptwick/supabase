@@ -1,7 +1,7 @@
 import { StatusCodes } from 'npm:http-status-codes';
 import Database from '../models/database.ts';
 import UserPromptFavorite from '../models/user_prompt_favorite.ts';
-import { DeleteUserPromptFavoriteParams, CreateUserPromptFavoriteBody } from '../schemas/user_prompt_favorite.ts';
+import { CreateUserPromptFavoriteBody, DeleteUserPromptFavoriteParams } from '../schemas/user_prompt_favorite.ts';
 import { Context } from 'jsr:@hono/hono';
 import { throwApiError } from '../utils/error.ts';
 
@@ -29,7 +29,7 @@ export const createUserPromptFavorite = async (c: Context) => {
 		newUserPromptFavorite.promptId = promptId;
 		newUserPromptFavorite.createdAt = new Date();
 
-		await db.insert('user_favorite_prompts', newUserPromptFavorite);
+		await db.insert('user_prompt_favorites', newUserPromptFavorite);
 	} catch (ex) {
 		console.error('Error creating user favorite prompt:', ex);
 		// Check for unique constraint violation (Postgres error code 23505)
@@ -42,7 +42,7 @@ export const createUserPromptFavorite = async (c: Context) => {
 		throw ex;
 	}
 
-	return c.json({ success: true }, StatusCodes.CREATED);
+	return c.body(null, StatusCodes.CREATED);
 };
 
 /**
@@ -64,7 +64,8 @@ export const deleteUserPromptFavorite = async (c: Context) => {
 	const db = Database.instance;
 
 	const existingUserPromptFavorite = await db.queryOne<UserPromptFavorite>(
-		`SELECT * FROM user_favorite_prompts WHERE user_id = $1 AND prompt_id = $2`,
+		UserPromptFavorite,
+		`SELECT * FROM user_prompt_favorites WHERE user_id = $1 AND prompt_id = $2`,
 		[user.id, promptId],
 	);
 	if (!existingUserPromptFavorite) {
@@ -74,7 +75,7 @@ export const deleteUserPromptFavorite = async (c: Context) => {
 		);
 	}
 
-	await db.remove('user_favorite_prompts', existingUserPromptFavorite);
+	await db.remove('user_prompt_favorites', existingUserPromptFavorite);
 
-	return c.status(StatusCodes.NO_CONTENT);
+	return c.body(null, StatusCodes.NO_CONTENT);
 };

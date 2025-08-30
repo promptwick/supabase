@@ -24,26 +24,27 @@ export const getPrompt = async (c: Context) => {
 
 	const db = Database.instance;
 	const prompt = await db.queryOne<Prompt>(
+		Prompt,
 		`
-		SELECT 
-			id, 
-			name, 
-			prompt, 
-			is_public, 
-			is_latest_version, 
-			parent_prompt_id, 
-			version, 
-			locale_id, 
-			count_reaction_up, 
-			count_reaction_down, 
-			count_favorite, 
-			created_at, 
-			updated_at, 
-			created_by, 
-			updated_by 
-		FROM prompts 
-		WHERE id = $1 
-			AND deleted_at IS NULL
+			SELECT 
+				id, 
+				name, 
+				prompt, 
+				is_public, 
+				is_latest_version, 
+				parent_prompt_id, 
+				version, 
+				locale_id, 
+				count_reaction_up, 
+				count_reaction_down, 
+				count_favorite, 
+				created_at, 
+				updated_at, 
+				created_by, 
+				updated_by 
+			FROM prompts 
+			WHERE id = $1 
+				AND deleted_at IS NULL
 		`,
 		[promptId],
 	);
@@ -100,8 +101,6 @@ export const getAllPrompts = async (c: Context) => {
 
 	const user = c.get('user');
 
-	console.log(termIds);
-
 	let query = `
 	SELECT 
 		COUNT(*) OVER() AS total_count,
@@ -154,7 +153,13 @@ export const getAllPrompts = async (c: Context) => {
 	}
 
 	if (termIds && termIds.length > 0) {
-		query = `${query} AND terms.id IN ($TERM_IDS)`;
+		query = `${query} AND p.id IN (
+			SELECT prompt_id
+			FROM prompt_terms
+			WHERE term_id = ANY($TERM_IDS)
+			GROUP BY prompt_id
+			HAVING COUNT(DISTINCT term_id) = ${termIds.length}
+		)`;
 		params.term_ids = termIds;
 	}
 
@@ -174,7 +179,15 @@ export const getAllPrompts = async (c: Context) => {
 	OFFSET $OFFSET
   `;
 
-	const prompts = await db.query<Prompt & { isFavorited: boolean; terms: Array<Term>; totalCount: number }>(query, params);
+	const prompts = await db.query<Prompt & { isFavorited: boolean; terms: Array<Term>; totalCount: number }>(
+		class extends Prompt {
+			isFavorited!: boolean;
+			terms!: Array<Term>;
+			totalCount!: number;
+		},
+		query,
+		params,
+	);
 
 	if (prompts.length === 0) {
 		return c.json({
@@ -229,10 +242,7 @@ export const createPrompt = async (c: Context) => {
 	await db.withTransaction(async (transaction) => {
 		let parentPrompt = null;
 		if (parentPromptId) {
-			parentPrompt = await db.queryOne<Prompt>(
-				`SELECT * FROM prompts WHERE id = $1`,
-				[parentPromptId],
-			);
+			parentPrompt = await db.queryOne<Prompt>(Prompt, `SELECT * FROM prompts WHERE id = $1`, [parentPromptId]);
 			if (!parentPrompt) {
 				throwApiError(
 					StatusCodes.BAD_REQUEST,
@@ -243,6 +253,9 @@ export const createPrompt = async (c: Context) => {
 
 		// Get all term and taxonomy details
 		const terms = await db.query<Term & { taxonomyName: string }>(
+			class extends Term {
+				taxonomyName!: string;
+			},
 			`SELECT terms.*, taxonomys.name AS taxonomy_name FROM terms INNER JOIN taxonomys ON taxonomys.id = terms.taxonomy_id WHERE terms.id IN ($1)`,
 			[termIds],
 		);
@@ -315,6 +328,7 @@ export const patchPrompt = async (c: Context) => {
 
 	// Validate existing prompt
 	const existingPrompt = await db.queryOne<Prompt>(
+		Prompt,
 		`SELECT id, name, prompt, is_public, is_latest_version, parent_prompt_id, version, locale_id, count_reaction_up, count_reaction_down, count_favorite, created_at, updated_at, created_by, updated_by FROM prompts WHERE id = $1 AND deleted_at IS NULL`,
 		[promptId],
 	);
@@ -328,10 +342,7 @@ export const patchPrompt = async (c: Context) => {
 
 	if (termIds && termIds.length) {
 		// Validate term IDs
-		const validTermIds = await db.query<Term>(
-			`SELECT id, name, taxonomy_id, locale_id, created_at, updated_at FROM terms WHERE id IN ($1) AND deleted_at IS NULL`,
-			[termIds],
-		);
+		const validTermIds = await db.query<Term>(Term, `SELECT id, name, taxonomy_id, locale_id, created_at, updated_at FROM terms WHERE id IN ($1) AND deleted_at IS NULL`, [termIds]);
 		if (validTermIds.length !== termIds.length) {
 			throwApiError(
 				StatusCodes.BAD_REQUEST,
@@ -362,10 +373,7 @@ export const patchPrompt = async (c: Context) => {
 		}
 
 		// Get terms associated with existing prompt
-		const existingPromptTerms = await db.query<PromptTerm>(
-			`SELECT prompt_id, term_id, created_at FROM prompt_terms WHERE prompt_id = $1`,
-			[promptId],
-		);
+		const existingPromptTerms = await db.query<PromptTerm>(PromptTerm, `SELECT prompt_id, term_id, created_at FROM prompt_terms WHERE prompt_id = $1`, [promptId]);
 
 		// Identify terms to be deleted
 		const termsToDelete = existingPromptTerms.filter((term) => !termIds.includes(term.termId));
@@ -409,10 +417,7 @@ export const deletePrompt = async (c: Context) => {
 
 	// Delete the prompt
 	await db.withTransaction(async (transaction) => {
-		const existingPrompt = await db.queryOne<Prompt>(
-			`SELECT * FROM prompts WHERE id = $1`,
-			[promptId],
-		);
+		const existingPrompt = await db.queryOne<Prompt>(Prompt, `SELECT * FROM prompts WHERE id = $1`, [promptId]);
 		if (!existingPrompt) {
 			throwApiError(
 				StatusCodes.NOT_FOUND,
@@ -421,14 +426,14 @@ export const deletePrompt = async (c: Context) => {
 		}
 
 		// Delete associated prompt terms
-		await db.query(
+		await db.queryRaw(
 			`DELETE FROM prompt_terms WHERE prompt_id = $1`,
 			[promptId],
 			transaction,
 		);
 
 		// Delete the prompt
-		await db.query(
+		await db.queryRaw(
 			`DELETE FROM prompts WHERE id = $1`,
 			[promptId],
 			transaction,
