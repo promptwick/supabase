@@ -21,37 +21,51 @@ import { throwApiError } from '../utils/error.ts';
 export const getPrompt = async (c: Context) => {
 	const { promptId } = c.get('params') as GetPromptParams;
 
+	const user = c.get('user');
+
 	const db = Database.instance;
-	const prompt = await db.queryOne<Prompt>(
-		Prompt,
-		`
-			SELECT 
-				id, 
-				name, 
-				prompt, 
-				is_public, 
-				is_latest_version, 
-				parent_prompt_id, 
-				version, 
-				locale_id, 
-				count_reaction_up, 
-				count_reaction_down, 
-				count_favorite, 
-				created_at, 
-				updated_at, 
-				created_by, 
-				updated_by 
-			FROM prompts 
-			WHERE id = $1 
-				AND deleted_at IS NULL
-		`,
-		[promptId],
-	);
+
+	const query = `
+		SELECT 
+			p.id, 
+			p.name, 
+			p.prompt, 
+			p.is_public, 
+			p.is_latest_version,
+			p.parent_prompt_id, 
+			p.version, 
+			p.locale_id,
+			p.count_reaction_up,
+			p.count_reaction_down,
+			p.count_favorite,
+			p.created_at, 
+			p.updated_at,
+			CASE WHEN MIN(upf.user_id::TEXT) IS NOT NULL THEN true ELSE false END AS is_favorited,
+			MIN(upr.reaction_type) AS reaction_type,
+			JSON_AGG(JSON_BUILD_OBJECT(
+				'id', terms.id,
+				'name', terms.name,
+				'taxonomy_id', terms.taxonomy_id
+			)) AS terms
+
+			FROM prompts AS p
+			LEFT JOIN prompt_terms AS pterms ON p.id = pterms.prompt_id
+			LEFT JOIN terms AS terms ON pterms.term_id = terms.id
+			LEFT JOIN user_prompt_favorites AS upf ON p.id = upf.prompt_id 
+				AND upf.user_id = $USER_ID
+			LEFT JOIN user_prompt_reactions AS upr ON p.id = upr.prompt_id 
+				AND upr.user_id = $USER_ID
+			WHERE p.id = $PROMPT_ID
+				AND p.deleted_at IS NULL
+			GROUP BY p.id
+		`;
+
+	const prompt = await db.queryOne<Prompt>(Prompt, query, { prompt_id: promptId, user_id: user.id });
 	if (!prompt) {
 		throwApiError(
 			StatusCodes.NOT_FOUND,
 			'Prompt Not Found',
-			{ promptId },
+			{ prompt_id: promptId, user_id: user.id },
 		);
 	}
 
@@ -131,7 +145,7 @@ export const getAllPrompts = async (c: Context) => {
 			AND upf.user_id = $USER_ID
 		LEFT JOIN user_prompt_reactions AS upr ON p.id = upr.prompt_id 
 			AND upr.user_id = $USER_ID
-		WHERE 1 = 1`;
+		WHERE p.deleted_at IS NULL`;
 
 	const params: QueryArguments = {
 		limit,
@@ -248,14 +262,14 @@ export const createPrompt = async (c: Context) => {
 		let parentPrompt = null;
 		if (parentPromptId) {
 			parentPrompt = await db.queryOne<Prompt>(
-				Prompt, 
+				Prompt,
 				`
 					SELECT * 
 					FROM prompts 
 					WHERE id = $1
 				`,
 				[parentPromptId],
-				transaction
+				transaction,
 			);
 			if (!parentPrompt) {
 				throwApiError(
@@ -289,8 +303,6 @@ export const createPrompt = async (c: Context) => {
 			);
 		}
 
-		console.log('Trying to insert prompt');
-
 		const newPrompt = new Prompt();
 		newPrompt.id = uuid();
 		newPrompt.createdAt = new Date();
@@ -307,16 +319,18 @@ export const createPrompt = async (c: Context) => {
 
 		await db.insert('prompts', newPrompt, [], transaction);
 
-		// Save prompt term relationship
-		const newPromptTerms = termIds.map((termId) => {
-			const promptTerm = new PromptTerm();
-			promptTerm.promptId = newPrompt.id;
-			promptTerm.termId = termId;
-			promptTerm.createdAt = new Date();
-			return promptTerm;
-		});
+		if (terms.length) {
+			// Save prompt term relationship
+			const newPromptTerms = termIds.map((termId) => {
+				const promptTerm = new PromptTerm();
+				promptTerm.promptId = newPrompt.id;
+				promptTerm.termId = termId;
+				promptTerm.createdAt = new Date();
+				return promptTerm;
+			});
 
-		await db.insertMultiple('prompt_terms', newPromptTerms, [], transaction);
+			await db.insertMultiple('prompt_terms', newPromptTerms, [], transaction);
+		}
 
 		promptId = newPrompt.id;
 	});
