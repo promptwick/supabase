@@ -44,7 +44,7 @@ export const getTerm = async (c: Context) => {
 		);
 	}
 
-	return c.json(term, StatusCodes.OK);
+	return c.json({ data: term }, StatusCodes.OK);
 };
 
 /**

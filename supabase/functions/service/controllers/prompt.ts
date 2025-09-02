@@ -18,7 +18,6 @@ import { throwApiError } from '../utils/error.ts';
  * @returns A Promise that resolves to a JSON response containing the prompt data and a 200 OK status.
  * @throws {ApiError} If the prompt with the specified ID does not exist, throws an error with a 404 Not Found status.
  */
-
 export const getPrompt = async (c: Context) => {
 	const { promptId } = c.get('params') as GetPromptParams;
 
@@ -56,7 +55,7 @@ export const getPrompt = async (c: Context) => {
 		);
 	}
 
-	return c.json(prompt, StatusCodes.OK);
+	return c.json({ data: prompt }, StatusCodes.OK);
 };
 
 /**
@@ -153,18 +152,24 @@ export const getAllPrompts = async (c: Context) => {
 	}
 
 	if (termIds && termIds.length > 0) {
+		const termPlaceholders = termIds.map((_, index) => `$TERM_ID_${index}`).join(', ');
 		query = `${query} AND p.id IN (
 			SELECT prompt_id
 			FROM prompt_terms
-			WHERE term_id = ANY($TERM_IDS)
+			WHERE term_id IN (${termPlaceholders})
 			GROUP BY prompt_id
 			HAVING COUNT(DISTINCT term_id) = ${termIds.length}
 		)`;
-		params.term_ids = termIds;
+		termIds.forEach((termId, index) => {
+			params[`term_id_${index}`] = termId;
+		});
 	}
 
 	if (searchQuery) {
-		query = `${query} AND (p.name ILIKE $SEARCH_QUERY OR p.prompt ILIKE $SEARCH_QUERY)`;
+		query = `${query} AND (
+			p.name ILIKE $SEARCH_QUERY 
+			OR p.prompt ILIKE $SEARCH_QUERY
+		)`;
 		params.search_query = `%${searchQuery}%`;
 	}
 
@@ -242,7 +247,16 @@ export const createPrompt = async (c: Context) => {
 	await db.withTransaction(async (transaction) => {
 		let parentPrompt = null;
 		if (parentPromptId) {
-			parentPrompt = await db.queryOne<Prompt>(Prompt, `SELECT * FROM prompts WHERE id = $1`, [parentPromptId]);
+			parentPrompt = await db.queryOne<Prompt>(
+				Prompt, 
+				`
+					SELECT * 
+					FROM prompts 
+					WHERE id = $1
+				`,
+				[parentPromptId],
+				transaction
+			);
 			if (!parentPrompt) {
 				throwApiError(
 					StatusCodes.BAD_REQUEST,
@@ -256,8 +270,16 @@ export const createPrompt = async (c: Context) => {
 			class extends Term {
 				taxonomyName!: string;
 			},
-			`SELECT terms.*, taxonomys.name AS taxonomy_name FROM terms INNER JOIN taxonomys ON taxonomys.id = terms.taxonomy_id WHERE terms.id IN ($1)`,
+			`
+				SELECT 
+					terms.*, 
+					taxonomies.name AS taxonomy_name 
+				FROM terms
+				INNER JOIN taxonomies ON taxonomies.id = terms.taxonomy_id
+				WHERE terms.id = ANY($1)
+			`,
 			[termIds],
+			transaction,
 		);
 
 		if (terms.length !== termIds.length) {
@@ -266,6 +288,8 @@ export const createPrompt = async (c: Context) => {
 				'One or more term references are invalid',
 			);
 		}
+
+		console.log('Trying to insert prompt');
 
 		const newPrompt = new Prompt();
 		newPrompt.id = uuid();

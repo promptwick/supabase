@@ -38,7 +38,7 @@ export const getTaxonomy = async (c: Context): Promise<Response> => {
 			'The requested taxonomy could not be found',
 		);
 	}
-	return c.json(taxonomy, StatusCodes.OK);
+	return c.json({ data: taxonomy }, StatusCodes.OK);
 };
 
 /**

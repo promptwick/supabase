@@ -18,3 +18,7 @@ export const generateRandomString = (length: number): string => {
   }
   return result;
 };
+
+export const makeLeanQuery = (query: string): string => {
+  return query.replace(/[\t\n]/g, ' ').replace(/\s+/g, ' ').trim();
+};

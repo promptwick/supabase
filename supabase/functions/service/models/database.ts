@@ -1,9 +1,11 @@
 import { snakeCase } from 'https://deno.land/x/case@2.2.0/mod.ts';
 import { Pool, QueryArguments, Transaction } from 'jsr:@db/postgres';
+import { v7 as uuid } from 'npm:uuid';
 
 import logger from '../utils/logger.ts';
 
 import BaseEntity, { isExtraField } from './base_entity.ts';
+import { makeLeanQuery } from '../utils/helpers.ts';
 
 const log = logger.child('models.database');
 
@@ -50,20 +52,23 @@ export default class Database {
 		const defaultFields: string[] = modelClass.defaultFields || [];
 		const placeholders: string[] = [];
 		const values = records
-			.map((record) =>
-				attrs
-					.map((attr, index) => {
+			.map((record) => {
+				let placeHolderIndex = 1;
+				return attrs
+					.map((attr) => {
 						const value = (record as never)[attr];
 						if (defaultFields.includes(attr) && value === undefined) {
 							placeholders.push('DEFAULT');
 						} else {
-							placeholders.push(`$${index + 1}`);
+							placeholders.push(`$${placeHolderIndex}`);
+							placeHolderIndex += 1;
 						}
+
 						return value;
 					})
 					.filter((value) => value !== undefined)
-					.map(this.convertForSql)
-			)
+					.map(this.convertForSql);
+			})
 			.flat();
 
 		let stmt = `INSERT INTO ${tableName} (${attrs.map((attr) => snakeCase(attr)).join(',')}) VALUES (${placeholders.join(',')})`;
@@ -75,24 +80,19 @@ export default class Database {
 			}`;
 		}
 
-		log.debug(`Executing statement: ${stmt} with values`, { values });
+		log.debug(`Executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
 
 		if (transaction !== null) {
 			await transaction.queryArray(stmt, values);
 			return;
 		}
 
-		let conn;
+		using conn = await this.pool.connect();
 		try {
-			conn = await this.pool.connect();
 			await conn.queryArray(stmt, values);
 		} catch (error) {
-			log.error(`Error executing statement: ${stmt} with values`, { values });
+			log.error(`Error executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
 			throw error;
-		} finally {
-			if (conn) {
-				conn.release();
-			}
 		}
 	}
 
@@ -128,24 +128,19 @@ export default class Database {
 			.concat(primaryKeys.map((attr) => (record as never)[attr]))
 			.map(this.convertForSql);
 
-		log.debug(`Executing statement: ${stmt} with values`, { values });
+		log.debug(`Executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
 
 		if (transaction !== null) {
 			await transaction.queryArray(stmt, values);
 			return;
 		}
 
-		let conn;
+		using conn = await this.pool.connect();
 		try {
-			conn = await this.pool.connect();
 			await conn.queryArray(stmt, values);
 		} catch (error) {
-			log.error(`Error executing statement: ${stmt} with values`, { values });
+			log.error(`Error executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
 			throw error;
-		} finally {
-			if (conn) {
-				conn.release();
-			}
 		}
 	}
 
@@ -160,24 +155,19 @@ export default class Database {
 		const stmt = `DELETE FROM ${tableName} WHERE ${conditions.join(' AND ')}`;
 		const values = primaryKeys.map((attr) => (record as never)[attr]).map(this.convertForSql);
 
-		log.debug(`Executing statement: ${stmt} with values`, { values });
+		log.debug(`Executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
 
 		if (transaction !== null) {
 			await transaction.queryArray(stmt, values);
 			return;
 		}
 
-		let conn;
+		using conn = await this.pool.connect();
 		try {
-			conn = await this.pool.connect();
 			await conn.queryArray(stmt, values);
 		} catch (error) {
-			log.error(`Error executing statement: ${stmt} with values`, { values });
+			log.error(`Error executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
 			throw error;
-		} finally {
-			if (conn) {
-				conn.release();
-			}
 		}
 	}
 
@@ -187,7 +177,7 @@ export default class Database {
 		values: QueryArguments = [],
 		transaction: Transaction | null = null,
 	): Promise<T[]> {
-		log.debug(`Executing query: ${query} with values`, { values });
+		log.debug(`Executing query: "${makeLeanQuery(query)}" with values`, { values });
 
 		if (transaction !== null) {
 			const { rows } = await transaction.queryObject<T>({ camelCase: true, text: query, args: values });
@@ -200,7 +190,7 @@ export default class Database {
 			const { rows } = await conn.queryObject<Record<string, unknown>>({ camelCase: true, text: query, args: values });
 			return rows.map((row) => BaseEntity.fromJSON<T>(T, row));
 		} catch (error) {
-			log.error(`Error executing query: ${query} with values`, { values });
+			log.error(`Error executing query: "${makeLeanQuery(query)}" with values`, { values });
 			throw error;
 		} finally {
 			if (conn) {
@@ -223,7 +213,7 @@ export default class Database {
 	}
 
 	public async queryRaw(query: string, values: QueryArguments, transaction: Transaction | null = null): Promise<unknown[]> {
-		log.debug(`Executing raw query: ${query} with values`, { values });
+		log.debug(`Executing raw query: "${makeLeanQuery(query)}" with values`, { values });
 
 		if (transaction !== null) {
 			const { rows } = await transaction.queryObject({ text: query, args: values });
@@ -237,7 +227,7 @@ export default class Database {
 
 			return rows;
 		} catch (error) {
-			log.error(`Error executing raw query: ${query} with values`, { values });
+			log.error(`Error executing raw query: "${makeLeanQuery(query)}" with values`, { values });
 			throw error;
 		} finally {
 			if (conn) {
@@ -268,10 +258,11 @@ export default class Database {
 	public async withTransaction(
 		func: (transaction: Transaction) => Promise<unknown>,
 	) {
-		const conn = await this.pool.connect();
-		const transaction = conn.createTransaction('');
+		using conn = await this.pool.connect();
+		const transaction = conn.createTransaction(uuid());
 		try {
 			await transaction.begin();
+			console.log('starting transaction', transaction);
 			await func(transaction);
 			await transaction.commit();
 		} catch (error) {
