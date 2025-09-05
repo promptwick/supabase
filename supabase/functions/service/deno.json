@@ -1,9 +1,5 @@
 {
   "nodeModulesDir": "auto",
-  "compilerOptions": {
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
-  },
   "fmt": {
     "useTabs": true,
     "lineWidth": 200,

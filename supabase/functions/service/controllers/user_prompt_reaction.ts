@@ -1,10 +1,14 @@
 // controllers/user_prompt_reactions.ts
-import { Context } from 'jsr:@hono/hono';
-import { StatusCodes } from 'npm:http-status-codes';
-import Database from '../models/database.ts';
-import UserPromptReaction from '../models/user_prompt_reaction.ts';
-import { CreateUserPromptReactionBody, CreateUserPromptReactionParams, DeleteUserPromptReactionParams } from '../schemas/user_prompt_reaction.ts';
-import { throwApiError } from '../utils/error.ts';
+import { Context } from "jsr:@hono/hono";
+import { StatusCodes } from "npm:http-status-codes";
+import Database from "../models/database.ts";
+import UserPromptReaction from "../models/user_prompt_reaction.ts";
+import {
+	CreateUserPromptReactionBody,
+	CreateUserPromptReactionParams,
+	DeleteUserPromptReactionParams,
+} from "../schemas/user_prompt_reaction.ts";
+import { throwApiError } from "../utils/error.ts";
 
 /**
  * Handles the creation of a user prompt reaction.
@@ -13,11 +17,13 @@ import { throwApiError } from '../utils/error.ts';
  * @returns A JSON response indicating success with HTTP status 201 (Created).
  */
 export const createUserPromptReaction = async (c: Context) => {
-	const { promptId } = c.get('params') as unknown as CreateUserPromptReactionParams;
-	const { reactionType } = c.get('body') as CreateUserPromptReactionBody;
+	const { promptId } = c.get(
+		"params",
+	) as unknown as CreateUserPromptReactionParams;
+	const { reactionType } = c.get("body") as CreateUserPromptReactionBody;
 	const db = Database.instance;
 
-	const user = c.get('user');
+	const user = c.get("user");
 
 	const reaction = new UserPromptReaction();
 	reaction.userId = user.id;
@@ -25,7 +31,10 @@ export const createUserPromptReaction = async (c: Context) => {
 	reaction.reactionType = reactionType;
 	reaction.createdAt = new Date();
 
-	await db.insert('user_prompt_reactions', reaction);
+	await db.insert("user_prompt_reactions", reaction, [
+		"reactionType",
+		"createdAt",
+	]);
 
 	return c.body(null, StatusCodes.CREATED);
 };
@@ -37,10 +46,12 @@ export const createUserPromptReaction = async (c: Context) => {
  * @returns A JSON response indicating success with HTTP status 200 (OK).
  */
 export const deleteUserPromptReaction = async (c: Context) => {
-	const { promptId } = c.get('params') as unknown as DeleteUserPromptReactionParams;
+	const { promptId } = c.get(
+		"params",
+	) as unknown as DeleteUserPromptReactionParams;
 	const db = Database.instance;
 
-	const user = c.get('user');
+	const user = c.get("user");
 
 	const existingUserPromptReaction = await db.queryOne<UserPromptReaction>(
 		UserPromptReaction,
@@ -59,7 +70,7 @@ export const deleteUserPromptReaction = async (c: Context) => {
 	if (!existingUserPromptReaction) {
 		throwApiError(
 			StatusCodes.NOT_FOUND,
-			'Cannot remove reaction: User reaction prompt not found',
+			"Cannot remove reaction: User reaction prompt not found",
 		);
 	}
 

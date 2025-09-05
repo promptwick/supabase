@@ -1,18 +1,14 @@
-import BaseEntity from './base_entity.ts';
+import BaseEntity from "./base_entity.ts";
 
 class PromptTerm extends BaseEntity {
-	static override primaryKeys = ['id'];
-	static override defaultFields = ['id', 'createdAt', 'updatedAt'];
-
-	id!: string;
+	static override primaryKeys = ["promptId", "termId"];
+	static override defaultFields = ["createdAt"];
 
 	promptId!: string;
 
 	termId!: string;
 
 	createdAt!: Date;
-
-	updatedAt!: Date;
 }
 
 export default PromptTerm;

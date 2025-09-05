@@ -1,13 +1,13 @@
-import { snakeCase } from 'https://deno.land/x/case@2.2.0/mod.ts';
-import { Pool, QueryArguments, Transaction } from 'jsr:@db/postgres';
-import { v7 as uuid } from 'npm:uuid';
+import { snakeCase } from "https://deno.land/x/case@2.2.0/mod.ts";
+import { Pool, QueryArguments, Transaction } from "jsr:@db/postgres";
+import { v7 as uuid } from "npm:uuid";
 
-import logger from '../utils/logger.ts';
+import logger from "../utils/logger.ts";
 
-import BaseEntity, { isExtraField } from './base_entity.ts';
-import { makeLeanQuery } from '../utils/helpers.ts';
+import BaseEntity, { isExtraField } from "./base_entity.ts";
+import { makeLeanQuery } from "../utils/helpers.ts";
 
-const log = logger.child('models.database');
+const log = logger.child("models.database");
 
 export default class Database {
 	static #instance: Database;
@@ -18,7 +18,7 @@ export default class Database {
 
 	constructor(debug = false) {
 		this.debug = debug;
-		const dsn = Deno.env.get('SUPABASE_DB_URL');
+		const dsn = Deno.env.get("SUPABASE_DB_URL");
 		this.pool = new Pool(dsn, 3, true);
 	}
 
@@ -47,40 +47,64 @@ export default class Database {
 		transaction: Transaction | null = null,
 	): Promise<void> {
 		const modelClass = records[0].constructor as typeof BaseEntity;
-		const attrs = Object.getOwnPropertyNames(records[0]).filter((attr) => !isExtraField(records[0], attr));
+		const attrs = Object.getOwnPropertyNames(records[0]).filter((attr) =>
+			!isExtraField(records[0], attr)
+		);
+		const primaryKeys = modelClass.primaryKeys.map((field) =>
+			snakeCase(field)
+		);
+		const defaultFields = modelClass.defaultFields || [];
 
-		const defaultFields: string[] = modelClass.defaultFields || [];
-		const placeholders: string[] = [];
+		const recordPlaceholders: string[][] = [];
+		let placeholderIndex = 1;
+
 		const values = records
 			.map((record) => {
-				let placeHolderIndex = 1;
-				return attrs
+				const currentRecordPlaceholders: string[] = [];
+				const recordValues = attrs
 					.map((attr) => {
 						const value = (record as never)[attr];
-						if (defaultFields.includes(attr) && value === undefined) {
-							placeholders.push('DEFAULT');
+						if (
+							defaultFields.includes(attr) && value === undefined
+						) {
+							currentRecordPlaceholders.push("DEFAULT");
+							return undefined;
 						} else {
-							placeholders.push(`$${placeHolderIndex}`);
-							placeHolderIndex += 1;
+							currentRecordPlaceholders.push(
+								`$${placeholderIndex}`,
+							);
+							placeholderIndex += 1;
+							return value;
 						}
-
-						return value;
 					})
 					.filter((value) => value !== undefined)
 					.map(this.convertForSql);
+
+				recordPlaceholders.push(currentRecordPlaceholders);
+				return recordValues;
 			})
 			.flat();
 
-		let stmt = `INSERT INTO ${tableName} (${attrs.map((attr) => snakeCase(attr)).join(',')}) VALUES (${placeholders.join(',')})`;
+		const valuesClause = recordPlaceholders
+			.map((placeholders) => `(${placeholders.join(",")})`)
+			.join(",");
+
+		let stmt = `INSERT INTO ${tableName} (${
+			attrs.map((attr) => snakeCase(attr)).join(",")
+		}) VALUES ${valuesClause}`;
 		if (onDuplicateKeyUpdateFields.length > 0) {
-			stmt += ` ON DUPLICATE KEY UPDATE ${
-				onDuplicateKeyUpdateFields.map((field) => `${field}=NEW.${field}`).join(
-					',',
+			stmt += ` ON CONFLICT (${primaryKeys.join(",")}) DO UPDATE SET ${
+				onDuplicateKeyUpdateFields.map((field) =>
+					`${snakeCase(field)}=EXCLUDED.${snakeCase(field)}`
+				).join(
+					",",
 				)
 			}`;
 		}
 
-		log.debug(`Executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
+		log.debug(`Executing statement: "${makeLeanQuery(stmt)}" with values`, {
+			values,
+		});
 
 		if (transaction !== null) {
 			await transaction.queryArray(stmt, values);
@@ -91,7 +115,12 @@ export default class Database {
 		try {
 			await conn.queryArray(stmt, values);
 		} catch (error) {
-			log.error(`Error executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
+			log.error(
+				`Error executing statement: "${
+					makeLeanQuery(stmt)
+				}" with values`,
+				{ values },
+			);
 			throw error;
 		}
 	}
@@ -116,19 +145,27 @@ export default class Database {
 		fieldsToUpdate: string[],
 		transaction: Transaction | null = null,
 	): Promise<void> {
-		const assignments = fieldsToUpdate.map((field, index) => `${snakeCase(field)} = $${index + 1}`);
+		const assignments = fieldsToUpdate.map((field, index) =>
+			`${snakeCase(field)} = $${index + 1}`
+		);
 
 		const modelClass = record.constructor as typeof BaseEntity;
 		const primaryKeys: string[] = modelClass.primaryKeys || [];
-		const conditions = primaryKeys.map((attr, index) => `${snakeCase(attr)} = $${fieldsToUpdate.length + index + 1}`);
+		const conditions = primaryKeys.map((attr, index) =>
+			`${snakeCase(attr)} = $${fieldsToUpdate.length + index + 1}`
+		);
 
-		const stmt = `UPDATE ${tableName} SET ${assignments.join(', ')} WHERE ${conditions.join(' AND ')}`;
+		const stmt = `UPDATE ${tableName} SET ${assignments.join(", ")} WHERE ${
+			conditions.join(" AND ")
+		}`;
 
 		const values = fieldsToUpdate.map((field) => (record as never)[field])
 			.concat(primaryKeys.map((attr) => (record as never)[attr]))
 			.map(this.convertForSql);
 
-		log.debug(`Executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
+		log.debug(`Executing statement: "${makeLeanQuery(stmt)}" with values`, {
+			values,
+		});
 
 		if (transaction !== null) {
 			await transaction.queryArray(stmt, values);
@@ -139,7 +176,12 @@ export default class Database {
 		try {
 			await conn.queryArray(stmt, values);
 		} catch (error) {
-			log.error(`Error executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
+			log.error(
+				`Error executing statement: "${
+					makeLeanQuery(stmt)
+				}" with values`,
+				{ values },
+			);
 			throw error;
 		}
 	}
@@ -151,11 +193,19 @@ export default class Database {
 	): Promise<void> {
 		const modelClass = record.constructor as typeof BaseEntity;
 		const primaryKeys: string[] = modelClass.primaryKeys || [];
-		const conditions = primaryKeys.map((attr, index) => `${snakeCase(attr)} = $${index + 1}`);
-		const stmt = `DELETE FROM ${tableName} WHERE ${conditions.join(' AND ')}`;
-		const values = primaryKeys.map((attr) => (record as never)[attr]).map(this.convertForSql);
+		const conditions = primaryKeys.map((attr, index) =>
+			`${snakeCase(attr)} = $${index + 1}`
+		);
+		const stmt = `DELETE FROM ${tableName} WHERE ${
+			conditions.join(" AND ")
+		}`;
+		const values = primaryKeys.map((attr) => (record as never)[attr]).map(
+			this.convertForSql,
+		);
 
-		log.debug(`Executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
+		log.debug(`Executing statement: "${makeLeanQuery(stmt)}" with values`, {
+			values,
+		});
 
 		if (transaction !== null) {
 			await transaction.queryArray(stmt, values);
@@ -166,7 +216,12 @@ export default class Database {
 		try {
 			await conn.queryArray(stmt, values);
 		} catch (error) {
-			log.error(`Error executing statement: "${makeLeanQuery(stmt)}" with values`, { values });
+			log.error(
+				`Error executing statement: "${
+					makeLeanQuery(stmt)
+				}" with values`,
+				{ values },
+			);
 			throw error;
 		}
 	}
@@ -177,20 +232,33 @@ export default class Database {
 		values: QueryArguments = [],
 		transaction: Transaction | null = null,
 	): Promise<T[]> {
-		log.debug(`Executing query: "${makeLeanQuery(query)}" with values`, { values });
+		log.debug(`Executing query: "${makeLeanQuery(query)}" with values`, {
+			values,
+		});
 
 		if (transaction !== null) {
-			const { rows } = await transaction.queryObject<T>({ camelCase: true, text: query, args: values });
+			const { rows } = await transaction.queryObject<T>({
+				camelCase: true,
+				text: query,
+				args: values,
+			});
 			return rows;
 		}
 
 		let conn;
 		try {
 			conn = await this.pool.connect();
-			const { rows } = await conn.queryObject<Record<string, unknown>>({ camelCase: true, text: query, args: values });
+			const { rows } = await conn.queryObject<Record<string, unknown>>({
+				camelCase: true,
+				text: query,
+				args: values,
+			});
 			return rows.map((row) => BaseEntity.fromJSON<T>(T, row));
 		} catch (error) {
-			log.error(`Error executing query: "${makeLeanQuery(query)}" with values`, { values });
+			log.error(
+				`Error executing query: "${makeLeanQuery(query)}" with values`,
+				{ values },
+			);
 			throw error;
 		} finally {
 			if (conn) {
@@ -212,11 +280,21 @@ export default class Database {
 		return null;
 	}
 
-	public async queryRaw(query: string, values: QueryArguments, transaction: Transaction | null = null): Promise<unknown[]> {
-		log.debug(`Executing raw query: "${makeLeanQuery(query)}" with values`, { values });
+	public async queryRaw(
+		query: string,
+		values: QueryArguments,
+		transaction: Transaction | null = null,
+	): Promise<unknown[]> {
+		log.debug(
+			`Executing raw query: "${makeLeanQuery(query)}" with values`,
+			{ values },
+		);
 
 		if (transaction !== null) {
-			const { rows } = await transaction.queryObject({ text: query, args: values });
+			const { rows } = await transaction.queryObject({
+				text: query,
+				args: values,
+			});
 			return rows;
 		}
 
@@ -227,7 +305,12 @@ export default class Database {
 
 			return rows;
 		} catch (error) {
-			log.error(`Error executing raw query: "${makeLeanQuery(query)}" with values`, { values });
+			log.error(
+				`Error executing raw query: "${
+					makeLeanQuery(query)
+				}" with values`,
+				{ values },
+			);
 			throw error;
 		} finally {
 			if (conn) {
@@ -236,7 +319,10 @@ export default class Database {
 		}
 	}
 
-	public async queryRawRow(query: string, values: QueryArguments): Promise<unknown> {
+	public async queryRawRow(
+		query: string,
+		values: QueryArguments,
+	): Promise<unknown> {
 		const result = await this.queryRaw(query, values);
 		if (result.length > 0) {
 			return result[0];
@@ -262,7 +348,7 @@ export default class Database {
 		const transaction = conn.createTransaction(uuid());
 		try {
 			await transaction.begin();
-			console.log('starting transaction', transaction);
+			console.log("starting transaction", transaction);
 			await func(transaction);
 			await transaction.commit();
 		} catch (error) {
