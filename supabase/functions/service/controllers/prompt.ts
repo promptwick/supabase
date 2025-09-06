@@ -8,7 +8,7 @@ import Database from '../models/database.ts';
 import Prompt from '../models/prompt.ts';
 import PromptTerm from '../models/prompt_term.ts';
 import Term from '../models/term.ts';
-import { CreatePromptBody, DeletePromptParams, GetAllPromptsQuery, GetPromptParams, UpdatePromptBody, UpdatePromptParams } from '../schemas/prompt.ts';
+import { CreatePromptBody, DeletePromptParams, EditPromptBody, EditPromptParams, GetAllPromptsQuery, GetPromptParams } from '../schemas/prompt.ts';
 import { throwApiError } from '../utils/error.ts';
 
 /**
@@ -145,7 +145,8 @@ export const getAllPrompts = async (c: Context) => {
 			AND upf.user_id = $USER_ID
 		LEFT JOIN user_prompt_reactions AS upr ON p.id = upr.prompt_id 
 			AND upr.user_id = $USER_ID
-		WHERE p.deleted_at IS NULL`;
+		WHERE p.deleted_at IS NULL
+			AND p.is_latest_version = true`;
 
 	const params: QueryArguments = {
 		limit,
@@ -365,18 +366,39 @@ export const createPrompt = async (c: Context) => {
  * @throws {ApiError} If the prompt does not exist, is not owned by the user, or term references are invalid.
  */
 
-export const patchPrompt = async (c: Context) => {
-	const { promptId } = c.get('params') as UpdatePromptParams;
-	const { name, prompt, termIds } = c.get('body') as UpdatePromptBody;
+export const editPrompt = async (c: Context) => {
+	const { promptId } = c.get('params') as EditPromptParams;
+	const { name, prompt, termIds } = c.get('body') as EditPromptBody;
 
 	const user = c.get('user');
 
 	const db = Database.instance;
 
 	// Validate existing prompt
+	const promptQuery = `
+		SELECT 
+			id, 
+			name, 
+			prompt, 
+			is_public, 
+			is_latest_version, 
+			parent_prompt_id, 
+			version, 
+			locale_id, 
+			count_reaction_up, 
+			count_reaction_down, 
+			count_favorite, 
+			created_at, 
+			updated_at, 
+			created_by, 
+			updated_by 
+		FROM prompts 
+		WHERE id = $1 
+			AND deleted_at IS NULL
+	`;
 	const existingPrompt = await db.queryOne<Prompt>(
 		Prompt,
-		`SELECT id, name, prompt, is_public, is_latest_version, parent_prompt_id, version, locale_id, count_reaction_up, count_reaction_down, count_favorite, created_at, updated_at, created_by, updated_by FROM prompts WHERE id = $1 AND deleted_at IS NULL`,
+		promptQuery,
 		[promptId],
 	);
 
@@ -389,7 +411,19 @@ export const patchPrompt = async (c: Context) => {
 
 	if (termIds && termIds.length) {
 		// Validate term IDs
-		const validTermIds = await db.query<Term>(Term, `SELECT id, name, taxonomy_id, locale_id, created_at, updated_at FROM terms WHERE id IN ($1) AND deleted_at IS NULL`, [termIds]);
+		const termsQuery = `
+			SELECT 
+				id, 
+				name, 
+				taxonomy_id, 
+				locale_id, 
+				created_at, 
+				updated_at 
+			FROM terms 
+			WHERE id = ANY($1) 
+				AND deleted_at IS NULL
+		`;
+		const validTermIds = await db.query<Term>(Term, termsQuery, [termIds]);
 		if (validTermIds.length !== termIds.length) {
 			throwApiError(
 				StatusCodes.BAD_REQUEST,
@@ -420,7 +454,12 @@ export const patchPrompt = async (c: Context) => {
 		}
 
 		// Get terms associated with existing prompt
-		const existingPromptTerms = await db.query<PromptTerm>(PromptTerm, `SELECT prompt_id, term_id, created_at FROM prompt_terms WHERE prompt_id = $1`, [promptId]);
+		const existingTermsQuery = `
+			SELECT prompt_id, term_id, created_at
+			FROM prompt_terms
+			WHERE prompt_id = $1
+		`;
+		const existingPromptTerms = await db.query<PromptTerm>(PromptTerm, existingTermsQuery, [promptId]);
 
 		// Identify terms to be deleted
 		const termsToDelete = existingPromptTerms.filter((term) => !termIds.includes(term.termId));
@@ -444,7 +483,7 @@ export const patchPrompt = async (c: Context) => {
 		}
 	});
 
-	return c.status(StatusCodes.NO_CONTENT);
+	return c.body(null, StatusCodes.NO_CONTENT);
 };
 
 /**
@@ -487,5 +526,5 @@ export const deletePrompt = async (c: Context) => {
 		);
 	});
 
-	return c.status(StatusCodes.NO_CONTENT);
+	return c.body(null, StatusCodes.NO_CONTENT);
 };

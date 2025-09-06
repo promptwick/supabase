@@ -5,7 +5,7 @@ import { v7 as uuid } from 'npm:uuid';
 
 import Term from '../models/term.ts';
 import Database from '../models/database.ts';
-import { CreateTermBody, DeleteTermParams, GetAllTermsQuery, GetTermParams, UpdateTermBody, UpdateTermParams } from '../schemas/term.ts';
+import { CreateTermBody, DeleteTermParams, GetAllTermsQuery, GetTermParams, EditTermBody, EditTermParams } from '../schemas/term.ts';
 import { throwApiError } from '../utils/error.ts';
 import { QueryArguments } from 'jsr:@db/postgres';
 
@@ -142,9 +142,9 @@ export const createTerm = async (c: Context) => {
  * @returns A JSON response containing the updated term and a 200 OK status.
  * @throws {ApiError} If the term does not exist.
  */
-export const patchTerm = async (c: Context) => {
-	const { termId } = c.get('params') as unknown as UpdateTermParams;
-	const { name } = c.get('body') as UpdateTermBody;
+export const editTerm = async (c: Context) => {
+	const { termId } = c.get('params') as unknown as EditTermParams;
+	const { name } = c.get('body') as EditTermBody;
 
 	const db = Database.instance;
 
@@ -217,5 +217,5 @@ export const deleteTerm = async (c: Context) => {
 
 	await db.remove('terms', existingTerm);
 
-	return c.status(StatusCodes.NO_CONTENT);
+	return c.body(null, StatusCodes.NO_CONTENT);
 };

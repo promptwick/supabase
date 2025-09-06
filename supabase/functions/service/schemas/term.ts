@@ -16,11 +16,11 @@ export interface CreateTermBody {
 	taxonomyId: string;
 }
 
-export interface UpdateTermBody {
+export interface EditTermBody {
 	name?: string;
 }
 
-export interface UpdateTermParams {
+export interface EditTermParams {
 	termId: string;
 }
 
@@ -50,7 +50,7 @@ export const createTermSchema = Joi.object({
 	}).required(),
 });
 
-export const updateTermSchema = Joi.object({
+export const editTermSchema = Joi.object({
 	params: Joi.object({
 		termId: Joi.string().required(),
 	}).required(),

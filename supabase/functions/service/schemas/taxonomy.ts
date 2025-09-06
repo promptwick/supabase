@@ -8,11 +8,11 @@ export type CreateTaxonomyBody = {
 	name: string;
 };
 
-export type UpdateTaxonomyBody = {
+export type EditTaxonomyBody = {
 	name: string;
 };
 
-export type UpdateTaxonomyParams = {
+export type EditTaxonomyParams = {
 	taxonomyId: string;
 };
 
@@ -32,7 +32,7 @@ export const createTaxonomySchema = Joi.object({
 	}).required(),
 });
 
-export const updateTaxonomySchema = Joi.object({
+export const editTaxonomySchema = Joi.object({
 	body: Joi.object({
 		name: Joi.string().required(),
 	}).required(),

@@ -24,13 +24,13 @@ export type CreatePromptBody = {
 	termIds: string[];
 };
 
-export type UpdatePromptBody = {
+export type EditPromptBody = {
 	name: string;
 	prompt: string;
 	termIds: string[];
 };
 
-export type UpdatePromptParams = {
+export type EditPromptParams = {
 	promptId: string;
 };
 
@@ -68,7 +68,7 @@ export const createPromptSchema = Joi.object({
 	}).required(),
 });
 
-export const updatePromptSchema = Joi.object({
+export const editPromptSchema = Joi.object({
 	body: Joi.object({
 		name: Joi.string().optional(),
 		prompt: Joi.string().optional(),

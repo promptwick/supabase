@@ -1,18 +1,18 @@
 import { Hono } from 'jsr:@hono/hono';
 import { cors } from 'jsr:@hono/hono/cors';
 
-import { createTaxonomy, deleteTaxonomy, getAllTaxonomies, getTaxonomy, patchTaxonomy } from './controllers/taxonomy.ts';
-import { createTerm, deleteTerm, getAllTerms, getTerm, patchTerm } from './controllers/term.ts';
-import { createPrompt, deletePrompt, getAllPrompts, getPrompt, patchPrompt } from './controllers/prompt.ts';
+import { createTaxonomy, deleteTaxonomy, getAllTaxonomies, getTaxonomy, editTaxonomy } from './controllers/taxonomy.ts';
+import { createTerm, deleteTerm, getAllTerms, getTerm, editTerm } from './controllers/term.ts';
+import { createPrompt, deletePrompt, getAllPrompts, getPrompt, editPrompt } from './controllers/prompt.ts';
 import { createUserPromptFavorite, deleteUserPromptFavorite } from './controllers/user_prompt_favorite.ts';
 import { createUserPromptReaction, deleteUserPromptReaction } from './controllers/user_prompt_reaction.ts';
 import { withAuthorization } from './middlewares/authorizer.ts';
 import { errorHandler } from './middlewares/error-handler.ts';
 import { withSupabase } from './middlewares/supabase.ts';
 import { withValidation } from './middlewares/validator.ts';
-import { deletePromptSchema, getAllPromptsSchema, getPromptSchema, updatePromptSchema, createPromptSchema } from './schemas/prompt.ts';
-import { deleteTaxonomySchema, getTaxonomySchema, updateTaxonomySchema, createTaxonomySchema } from './schemas/taxonomy.ts';
-import { deleteTermSchema, getAllTermsSchema, getTermSchema, updateTermSchema, createTermSchema } from './schemas/term.ts';
+import { deletePromptSchema, getAllPromptsSchema, getPromptSchema, editPromptSchema, createPromptSchema } from './schemas/prompt.ts';
+import { deleteTaxonomySchema, getTaxonomySchema, editTaxonomySchema, createTaxonomySchema } from './schemas/taxonomy.ts';
+import { deleteTermSchema, getAllTermsSchema, getTermSchema, editTermSchema, createTermSchema } from './schemas/term.ts';
 import { deleteUserPromptFavoriteSchema, createUserPromptFavoriteSchema } from './schemas/user_prompt_favorite.ts';
 import { deleteUserPromptReactionSchema, createUserPromptReactionSchema } from './schemas/user_prompt_reaction.ts';
 
@@ -44,21 +44,21 @@ app.use('*', withAuthorization);
 app.get(`${BASE_PATH}/taxonomies`, getAllTaxonomies);
 app.get(`${BASE_PATH}/taxonomies/:taxonomyId`, withValidation(getTaxonomySchema), getTaxonomy);
 app.post(`${BASE_PATH}/taxonomies`, withValidation(createTaxonomySchema), createTaxonomy);
-app.patch(`${BASE_PATH}/taxonomies/:taxonomyId`, withValidation(updateTaxonomySchema), patchTaxonomy);
+app.patch(`${BASE_PATH}/taxonomies/:taxonomyId`, withValidation(editTaxonomySchema), editTaxonomy);
 app.delete(`${BASE_PATH}/taxonomies/:taxonomyId`, withValidation(deleteTaxonomySchema), deleteTaxonomy);
 
 /* ---------------------------------- Terms --------------------------------- */
 app.get(`${BASE_PATH}/terms`, withValidation(getAllTermsSchema), getAllTerms);
 app.get(`${BASE_PATH}/terms/:termId`, withValidation(getTermSchema), getTerm);
 app.post(`${BASE_PATH}/terms`, withValidation(createTermSchema), createTerm);
-app.patch(`${BASE_PATH}/terms/:termId`, withValidation(updateTermSchema), patchTerm);
+app.patch(`${BASE_PATH}/terms/:termId`, withValidation(editTermSchema), editTerm);
 app.delete(`${BASE_PATH}/terms/:termId`, withValidation(deleteTermSchema), deleteTerm);
 
 /* --------------------------------- Prompts -------------------------------- */
 app.get(`${BASE_PATH}/prompts`, withValidation(getAllPromptsSchema), getAllPrompts);
 app.get(`${BASE_PATH}/prompts/:promptId`, withValidation(getPromptSchema), getPrompt);
 app.post(`${BASE_PATH}/prompts`, withValidation(createPromptSchema), createPrompt);
-app.patch(`${BASE_PATH}/prompts/:promptId`, withValidation(updatePromptSchema), patchPrompt);
+app.patch(`${BASE_PATH}/prompts/:promptId`, withValidation(editPromptSchema), editPrompt);
 app.delete(`${BASE_PATH}/prompts/:promptId`, withValidation(deletePromptSchema), deletePrompt);
 
 /* -------------------------- User Prompt Favorites -------------------------- */

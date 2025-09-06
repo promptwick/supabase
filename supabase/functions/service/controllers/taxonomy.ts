@@ -3,7 +3,7 @@ import { StatusCodes } from 'npm:http-status-codes';
 import { v7 as uuid } from 'npm:uuid';
 import Database from '../models/database.ts';
 import Taxonomy from '../models/taxonomy.ts';
-import { CreateTaxonomyBody, GetTaxonomyParams, UpdateTaxonomyBody } from '../schemas/taxonomy.ts';
+import { CreateTaxonomyBody, GetTaxonomyParams, EditTaxonomyBody } from '../schemas/taxonomy.ts';
 import { throwApiError } from '../utils/error.ts';
 
 /**
@@ -90,10 +90,10 @@ export const createTaxonomy = async (c: Context): Promise<Response> => {
  * @param {Context} c - Hono context object
  * @returns {Promise<Response>} JSON response with success status or error
  */
-export const patchTaxonomy = async (c: Context): Promise<Response> => {
+export const editTaxonomy = async (c: Context): Promise<Response> => {
 	const db = Database.instance;
 	const { taxonomyId } = c.get('params') as GetTaxonomyParams;
-	const { name } = c.get('body') as UpdateTaxonomyBody;
+	const { name } = c.get('body') as EditTaxonomyBody;
 
 	const existingTaxonomy = await db.queryOne<Taxonomy>(
 		Taxonomy,

@@ -133,11 +133,16 @@ Deno.serve(async (req: Request) => {
     let response;
     const algoliaClient = getAlgoliaClient();
     if (payload.table === "prompts" && payload.type === "DELETE") {
+      log.info("Deleting object with ID", { objectId: promptId });
       response = await algoliaClient.deleteObject({
         indexName: "prompts",
         objectID: promptId,
       });
     } else {
+      log.info("Creating/updating object", {
+        objectId: promptId,
+        body: promptBody,
+      });
       response = await algoliaClient.addOrUpdateObject({
         indexName: "prompts",
         objectID: promptId,
@@ -149,7 +154,7 @@ Deno.serve(async (req: Request) => {
       response: JSON.stringify(response),
     });
   } catch (error) {
-    log.error("Webhook error:", { error });
+    log.error("Webhook error:", { error: (error as Error).stack });
 
     const errorMessage = error instanceof Error
       ? error.message
