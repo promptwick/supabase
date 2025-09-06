@@ -45,6 +45,7 @@ const shouldIndex = (payload: PromptWebhookPayload) => {
  */
 const getPrompt = async (db: Client, promptId: string) => {
   // Query the prompt info
+
   const query = `
       SELECT 
         p.id, 
@@ -62,14 +63,14 @@ const getPrompt = async (db: Client, promptId: string) => {
           'taxonomy_id', terms.taxonomy_id,
           'taxonomy_name', taxonomies.name
         )) AS terms
-			FROM prompts AS p
-			LEFT JOIN prompt_terms AS pterms ON p.id = pterms.prompt_id
-			LEFT JOIN terms AS terms ON pterms.term_id = terms.id
+      FROM prompts AS p
+      LEFT JOIN prompt_terms AS pterms ON p.id = pterms.prompt_id
+      LEFT JOIN terms AS terms ON pterms.term_id = terms.id
       LEFT JOIN taxonomies AS taxonomies ON terms.taxonomy_id = taxonomies.id
-			WHERE p.id = $PROMPT_ID
-				AND p.deleted_at IS NULL
-			GROUP BY p.id
-		`;
+      WHERE p.id = $prompt_id
+        AND p.deleted_at IS NULL
+      GROUP BY p.id
+    `;
 
   const result = await db.queryObject<Prompt>(query, {
     prompt_id: promptId,
@@ -92,6 +93,8 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  let db;
+
   try {
     const payload: PromptWebhookPayload = await req.json();
 
@@ -113,13 +116,14 @@ Deno.serve(async (req: Request) => {
     }
 
     // Grab the latest status of prompt
-    const db = await getDatabaseClient();
+    db = await getDatabaseClient();
     const promptId = payload.table === "prompts"
       ? (payload.record as PromptRecord).id
       : (payload.record as PromptTermRecord).prompt_id;
+
     const promptBody = await getPrompt(db, promptId);
 
-    if (!prompt) {
+    if (!promptBody) {
       return generateResponse(StatusCodes.NOT_FOUND, {
         error: "Prompt not found",
       });
@@ -142,8 +146,8 @@ Deno.serve(async (req: Request) => {
     }
 
     return generateResponse(StatusCodes.CREATED, {
-      response: JSON.stringify(response)
-    })
+      response: JSON.stringify(response),
+    });
   } catch (error) {
     log.error("Webhook error:", { error });
 
@@ -154,5 +158,9 @@ Deno.serve(async (req: Request) => {
     return generateResponse(StatusCodes.INTERNAL_SERVER_ERROR, {
       error: errorMessage,
     });
+  } finally {
+    if (db) {
+      await db.end();
+    }
   }
 });
