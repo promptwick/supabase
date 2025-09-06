@@ -271,7 +271,7 @@ export const createPrompt = async (c: Context) => {
 				[parentPromptId],
 				transaction,
 			);
-			if (!parentPrompt) {
+			if (!parentPrompt || (!parentPrompt.isPublic && parentPrompt.createdBy !== user.id)) {
 				throwApiError(
 					StatusCodes.BAD_REQUEST,
 					'Invalid parent prompt reference',
@@ -307,7 +307,7 @@ export const createPrompt = async (c: Context) => {
 		newPrompt.id = uuid();
 		newPrompt.createdAt = new Date();
 		newPrompt.createdBy = user.id;
-		newPrompt.isLatestVersion = !!parentPrompt;
+		newPrompt.isLatestVersion = true;
 		newPrompt.isPublic = isPublic;
 		newPrompt.name = name;
 		newPrompt.parentPromptId = parentPromptId ?? null;
@@ -319,6 +319,15 @@ export const createPrompt = async (c: Context) => {
 
 		await db.insert('prompts', newPrompt, [], transaction);
 
+		if (parentPrompt && !parentPrompt.isPublic && parentPrompt.isLatestVersion) {
+			// If the parent prompt is private and the latest version, mark it as not latest
+			parentPrompt.isLatestVersion = false;
+			parentPrompt.updatedAt = new Date();
+			parentPrompt.updatedBy = user.id;
+			await db.update('prompts', parentPrompt, ['isLatestVersion', 'updatedAt', 'updatedBy'], transaction);
+		}
+
+		// Associate terms with the new prompt
 		if (terms.length) {
 			// Save prompt term relationship
 			const newPromptTerms = termIds.map((termId) => {

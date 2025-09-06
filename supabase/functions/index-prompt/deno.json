@@ -1,3 +1,15 @@
 {
-  "imports": {}
+  "nodeModulesDir": "auto",
+  "fmt": {
+    "useTabs": true,
+    "lineWidth": 200,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "proseWrap": "always"
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  }
 }

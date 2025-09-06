@@ -1,32 +1,158 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+import { Client } from "jsr:@db/postgres";
+import { StatusCodes } from "npm:http-status-codes";
 
-// Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import {
+  Prompt,
+  PromptRecord,
+  PromptTermRecord,
+  PromptWebhookPayload,
+} from "./types.ts";
+import { getDatabaseClient } from "./utils/database.ts";
+import { generateResponse } from "./utils/helpers.ts";
+import logger from "./utils/logger.ts";
+import { getAlgoliaClient } from "./utils/algolia.ts";
 
-console.log("Hello from Functions!")
+const log = logger.child("index");
 
-Deno.serve(async (req) => {
-  const { name } = await req.json()
-  const data = {
-    message: `Hello ${name}!`,
+/**
+ * Determines if the webhook payload should trigger an Algolia index update.
+ * @param payload - The webhook payload from Supabase
+ * @returns True if the prompt should be (re-)indexed, false otherwise
+ */
+const shouldIndex = (payload: PromptWebhookPayload) => {
+  if (payload.table === "prompt_terms" || payload.type === "DELETE") {
+    return true;
   }
 
-  return new Response(
-    JSON.stringify(data),
-    { headers: { "Content-Type": "application/json" } },
-  )
-})
+  if (payload.type === "UPDATE" && payload.old_record) {
+    const newRecord = payload.record as PromptRecord;
+    const oldRecord = payload.old_record! as PromptRecord;
 
-/* To invoke locally:
+    return oldRecord.name !== newRecord.name ||
+      oldRecord.prompt !== newRecord.prompt ||
+      oldRecord.is_public !== newRecord.is_public ||
+      oldRecord.is_latest_version !== newRecord.is_latest_version;
+  }
 
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
+  return true;
+};
 
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/index-prompt' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
+/**
+ * Fetches the prompt and its related terms and taxonomy from the database.
+ * @param db - The database client
+ * @param promptId - The ID of the prompt to fetch
+ * @returns The prompt record with terms and taxonomy info, or undefined if not found
+ */
+const getPrompt = async (db: Client, promptId: string) => {
+  // Query the prompt info
+  const query = `
+      SELECT 
+        p.id, 
+        p.name, 
+        p.prompt, 
+        p.is_public, 
+        p.is_latest_version,
+        p.created_by,
+        p.updated_by,
+        p.created_at, 
+        p.updated_at,
+        JSON_AGG(JSON_BUILD_OBJECT(
+          'id', terms.id,
+          'name', terms.name,
+          'taxonomy_id', terms.taxonomy_id,
+          'taxonomy_name', taxonomies.name
+        )) AS terms
+			FROM prompts AS p
+			LEFT JOIN prompt_terms AS pterms ON p.id = pterms.prompt_id
+			LEFT JOIN terms AS terms ON pterms.term_id = terms.id
+      LEFT JOIN taxonomies AS taxonomies ON terms.taxonomy_id = taxonomies.id
+			WHERE p.id = $PROMPT_ID
+				AND p.deleted_at IS NULL
+			GROUP BY p.id
+		`;
 
-*/
+  const result = await db.queryObject<Prompt>(query, {
+    prompt_id: promptId,
+  });
+
+  return result.rows[0];
+};
+
+/**
+ * Main webhook handler for Supabase database changes.
+ * Accepts POST requests with webhook payloads and updates Algolia accordingly.
+ * @param req - The incoming HTTP request
+ * @returns A Response object with the result of the operation
+ */
+Deno.serve(async (req: Request) => {
+  // Don't allow anything apart from POST
+  if (req.method !== "POST") {
+    return generateResponse(StatusCodes.METHOD_NOT_ALLOWED, {
+      error: "Method not allowed",
+    });
+  }
+
+  try {
+    const payload: PromptWebhookPayload = await req.json();
+
+    log.info("Received webhook payload:", { payload });
+
+    // Verify this is for the prompts table
+    if (payload.table !== "prompts" && payload.table !== "prompt_terms") {
+      log.info(`Ignoring webhook for table: ${payload.table}`);
+
+      return generateResponse(StatusCodes.OK, {
+        message: "Webhook ignored - not for prompts or prompt_terms table",
+      });
+    }
+
+    if (!shouldIndex(payload)) {
+      return generateResponse(StatusCodes.OK, {
+        message: "Webhook ignore - relevant columns were not updated",
+      });
+    }
+
+    // Grab the latest status of prompt
+    const db = await getDatabaseClient();
+    const promptId = payload.table === "prompts"
+      ? (payload.record as PromptRecord).id
+      : (payload.record as PromptTermRecord).prompt_id;
+    const promptBody = await getPrompt(db, promptId);
+
+    if (!prompt) {
+      return generateResponse(StatusCodes.NOT_FOUND, {
+        error: "Prompt not found",
+      });
+    }
+
+    // Update in Algolia
+    let response;
+    const algoliaClient = getAlgoliaClient();
+    if (payload.table === "prompts" && payload.type === "DELETE") {
+      response = await algoliaClient.deleteObject({
+        indexName: "prompts",
+        objectID: promptId,
+      });
+    } else {
+      response = await algoliaClient.addOrUpdateObject({
+        indexName: "prompts",
+        objectID: promptId,
+        body: promptBody as unknown as Record<string, unknown>,
+      });
+    }
+
+    return generateResponse(StatusCodes.CREATED, {
+      response: JSON.stringify(response)
+    })
+  } catch (error) {
+    log.error("Webhook error:", { error });
+
+    const errorMessage = error instanceof Error
+      ? error.message
+      : "Unknown error";
+
+    return generateResponse(StatusCodes.INTERNAL_SERVER_ERROR, {
+      error: errorMessage,
+    });
+  }
+});
