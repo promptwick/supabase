@@ -160,7 +160,7 @@ export const getAllPrompts = async (c: Context) => {
 		if (isPublic) {
 			query = `${query} AND p.is_public = true`;
 		} else {
-			query = `${query} AND p.is_public = false AND p.created_by = $USER_ID`;
+			query = `${query} AND p.created_by = $USER_ID`;
 		}
 	} else {
 		query = `${query} AND (p.is_public = true OR p.created_by = $USER_ID)`;
